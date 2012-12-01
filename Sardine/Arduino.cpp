@@ -342,7 +342,8 @@ void MsgReceived( char * msg_buf, int len )
 // after previous newline will stay on collectionbuf to wait for next ReadRequestCompleted.
 VOID CALLBACK ReadRequestCompleted( DWORD errorCode, DWORD bytesRead, LPVOID overlapped )
 {
-   LOG(ARDUINO_MSG_VERBOSE,"Arduino::ReadRequestCompleted: errorCode %d, read: %d bytes: [%s]\n",errorCode,bytesRead,buffer);
+	buffer[bytesRead]=0;
+	LOG(ARDUINO_MSG_VERBOSE,"Arduino::ReadRequestCompleted: errorCode %d, read: %d bytes: [%s]\n",errorCode,bytesRead,buffer);
 	if (bytesRead>0)
 	{
 		unsigned int i=0;

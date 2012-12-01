@@ -45,6 +45,7 @@ int CProtocolISO9141::Disconnect()
 #endif
 }
 
+/*
 int CProtocolISO9141::ReadMsgs( PASSTHRU_MSG * pMsgs, unsigned long * pNumMsgs, unsigned long Timeout )
 {
 	LOG(PROTOCOL,"CProtocolISO9141::ReadMsgs - pNumMsgs %d, timeout %d",*pNumMsgs,Timeout);
@@ -56,6 +57,7 @@ int CProtocolISO9141::ReadMsgs( PASSTHRU_MSG * pMsgs, unsigned long * pNumMsgs, 
 	return ERR_NOT_SUPPORTED;
 #endif
 }
+*/
 
 int CProtocolISO9141::DoWriteMsg( PASSTHRU_MSG * pMsg, unsigned long Timeout )
 {
@@ -240,6 +242,12 @@ int CProtocolISO9141::SetIOCTLParam( SCONFIG * pConfig )
 			return STATUS_NOERROR;
 		case PARITY:
 			LOG(ERR,"CProtocolISO9141::SetIOCTLParam - Setting PARITY on device not implemented, ignoring --- FIXME");
+			return STATUS_NOERROR;
+		case FIVE_BAUD_MOD:
+			LOG(ERR,"CProtocolISO9141::SetIOCTLParam - Setting FIVE_BAUD_MOD on device not implemented, ignoring --- FIXME");
+			return STATUS_NOERROR;
+		case DATA_BITS:
+			LOG(ERR,"CProtocolISO9141::SetIOCTLParam - Setting DATA_BITS on device not implemented, ignoring --- FIXME");
 			return STATUS_NOERROR;
 #endif
 		default:
