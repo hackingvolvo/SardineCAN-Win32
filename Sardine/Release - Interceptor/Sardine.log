@@ -1,0 +1,16 @@
+﻿Build started 29-Nov-12 4:02:12 PM.
+     1>Project "C:\Users\olento\Documents\Visual Studio 2010\Projects\Sardine\Sardine\Sardine.vcxproj" on node 2 (Build target(s)).
+     1>Link:
+         Sardine.vcxproj -> C:\Users\olento\Documents\Visual Studio 2010\Projects\Sardine\Release - Interceptor\Sardine.dll
+       PostBuildEvent:
+         call "C:\Users\olento\Documents\Visual Studio 2010\Projects\Sardine\Sardine\..\copydll.bat"
+         :VCEnd
+                 1 file(s) copied.
+                 1 file(s) copied.
+                 1 file(s) copied.
+                 1 file(s) copied.
+     1>Done Building Project "C:\Users\olento\Documents\Visual Studio 2010\Projects\Sardine\Sardine\Sardine.vcxproj" (Build target(s)).
+
+Build succeeded.
+
+Time Elapsed 00:00:00.12

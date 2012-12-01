@@ -1,0 +1,12 @@
+- default filter behaviour: J2534-2 states it is BLOCK ALL by default. Subsequent BLOCK_FILTERS can be used to block messages passed otherwise by PASS_FILTER
+ So it is like this: BLOCK ALL unless msg matches PASS_FILTER & none of the BLOCK_FILTER match
+
+- try initializing Arduino again in PassthruConnect, if it wasn't initialized when first opening the DLL
+
+- add PASS/BLOCK filter functionality
+
+
+- arduino sometimes doesn't assemble messages correctly. Should assemble according to newline, but for some reasing it completes assembly even when there should'nt be newline(?) 
+	scan-ecu.log: 1641: [18:31:6.17]
+
+
