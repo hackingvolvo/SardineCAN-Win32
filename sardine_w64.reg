@@ -1,0 +1,16 @@
+Windows Registry Editor Version 5.00
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\PassThruSupport.04.04\Sardine CAN]
+"APIVersion"="04.04"
+"Vendor"="Olaf@HackingVolvo"
+"Name"="Sardine CAN"
+"ConfigApplication"="c:\\sardine\\SARDINECFG.EXE"
+"COM_PORT"=dword:3
+"BAUD_RATE"=dword:1C200
+"DISABLE_DTR"=dword:1
+"CAN"=dword:00000001
+"ISO15765"=dword:00000001
+"ISO9141"=dword:00000001
+"ISO14230"=dword:00000001
+"FunctionLibrary"="C:\\sardine\\sardine.dll"
+"UseInterceptor"=dword:00000001
