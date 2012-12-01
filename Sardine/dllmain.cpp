@@ -31,7 +31,7 @@ BOOL APIENTRY DllMain( HMODULE hModule,
                        LPVOID lpReserved
 					 )
 {
-	LOG(INIT,"Sardine v1.36 : (c) Olaf @ HackingVolvo Labs 2012");
+	LOG(INIT,"Sardine v1.37 : (c) Olaf @ HackingVolvo Labs 2012");
 	LOG(INIT,"DllMain: %d",ul_reason_for_call);
 	switch (ul_reason_for_call)
 	{
