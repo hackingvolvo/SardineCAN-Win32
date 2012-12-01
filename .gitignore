@@ -1,6 +1,10 @@
 /Release - Interceptor
 /wntdll.pdb
 /ipch
+/Sardine/Debug
+/Sardine/Release
+/SardineTest/Debug
+/SardineTest/Release
 *.pdb
 *.suo
 *.tlog
