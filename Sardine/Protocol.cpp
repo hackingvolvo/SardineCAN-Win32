@@ -690,6 +690,7 @@ int CProtocol::ReadMsgs( PASSTHRU_MSG * pMsgs, unsigned long * pNumMsgs, unsigne
 	if ( (count==0) && (Timeout==0) )
 		{
 		LOG(PROTOCOL_VERBOSE,"CProtocol::ReadMsgs: No messages and timeout==0 " );
+		*pNumMsgs = 0;
 		return ERR_BUFFER_EMPTY;
 		}
 
@@ -697,12 +698,13 @@ int CProtocol::ReadMsgs( PASSTHRU_MSG * pMsgs, unsigned long * pNumMsgs, unsigne
 	if (count>=(*pNumMsgs))
 		{
 		LOG(PROTOCOL_VERBOSE,"CProtocol::ReadMsgs: Enough messages in buffer: sending %d msgs",*pNumMsgs);
-		// we have (more than) enough of buffered messages
+		// we have (more than) enough of buffered messages, read just the amount requested
 		return DoReadMsgs(pMsgs,*pNumMsgs,overflow);
 		}
 	else if ( (Timeout==0) && (count>0) )
 		{
 		LOG(PROTOCOL_VERBOSE,"CProtocol::ReadMsgs: timeout==0 and we have >0 msgs in buffer: sending %d msgs",count);
+		*pNumMsgs = count;
 		return DoReadMsgs(pMsgs,count,overflow);
 		}
 	else
@@ -713,7 +715,9 @@ int CProtocol::ReadMsgs( PASSTHRU_MSG * pMsgs, unsigned long * pNumMsgs, unsigne
 		count=GetRXMessageCount();
 		if (count>0)
 			{
-			return DoReadMsgs(pMsgs,count,overflow);
+			// read MIN(*pNumMsgs,count) messages
+			*pNumMsgs = (count > *pNumMsgs) ? *pNumMsgs : count;
+			return DoReadMsgs(pMsgs,*pNumMsgs,overflow);
 			}
 		else
 			return ERR_BUFFER_EMPTY;

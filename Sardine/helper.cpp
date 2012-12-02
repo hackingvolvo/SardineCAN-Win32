@@ -85,7 +85,7 @@ char* ConvertLPWSTRToLPSTR (LPWSTR lpwszStrIn)
 		 handle << ">>>>";
 		 break;
 	 case LogMessageType::SENT:
-		 handle << "<<<< ";
+		 handle << "<<<<";
 		 break;
 	 case LogMessageType::ISO15765_RECV:
 		 handle << "ISO>";
