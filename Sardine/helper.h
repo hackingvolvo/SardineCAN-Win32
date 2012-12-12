@@ -105,8 +105,7 @@ namespace debug {
 	 char * ascbuffer = ConvertLPWSTRToLPSTR( szMessageBuffer ) ; \
 	 handle << ascbuffer; \
 	 delete ascbuffer; \
-	 handle << "\n"; \
-	 std::cout << "\n" << std::flush; \
+	 handle << "\n" << std::flush; \
 	}					\
  }
 

@@ -13,4 +13,4 @@ Windows Registry Editor Version 5.00
 "ISO9141"=dword:00000001
 "ISO14230"=dword:00000001
 "FunctionLibrary"="C:\\sardine\\sardine.dll"
-"UseInterceptor"=dword:00000001
+"UseInterceptor"=dword:00000000
