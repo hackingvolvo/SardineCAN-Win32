@@ -12,6 +12,7 @@
 #ifdef ENABLE_LOGGING
 
 #define SARDINE_LOG_FILE "c:\\sardine\\sardine.log"
+#define SARDINE_MSG_LOG_FILE "c:\\sardine\\sardine-msg.log"
 
 // debug fields. 
 // God damn, wasted few minutes of my life figuring out what's wrong, only to realize that binary literals don't exist in Visual C++...

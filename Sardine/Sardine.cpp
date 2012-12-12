@@ -145,7 +145,7 @@ DllExport PassThruOpen(void *pName, unsigned long *pDeviceID)
 		LOG(MAINFUNC,"PassThruOpen: pName==NULL");
 		}
 
-	*pDeviceID = 0xdeadbeef;
+	*pDeviceID = SARDINE_DEVICE_ID;
 	return last_error=STATUS_NOERROR;
 }
 
@@ -173,7 +173,7 @@ DllExport PassThruConnect(unsigned long DeviceID, unsigned long ProtocolID, unsi
 	if (pChannelID==NULL)
 		return last_error=ERR_NULL_PARAMETER;
 
-	if (!Comm::WaitUntilInitialized(2000))
+	if (!Comm::WaitUntilInitialized(COMM_INIT_TIMEOUT))
 		{
 		LOG(ERR,"PassThruConnect: Arduino wasn't initialized!");
 		return last_error=ERR_DEVICE_NOT_CONNECTED;
@@ -189,30 +189,17 @@ DllExport PassThruConnect(unsigned long DeviceID, unsigned long ProtocolID, unsi
 	ch->protocolId = ProtocolID;
 	ch->handler = NULL;
 
-	if ( (ProtocolID==ISO9141) || (ProtocolID==ISO9141_PS) ) //PROTOCOL_ID_ISO9141)
+	if ( (ProtocolID==ISO9141) || (ProtocolID==ISO9141_PS) ) 
 		{
 		LOG(PROTOCOL,"PassThruConnect: ISO9141");
 		ch->handler = new CProtocolISO9141(ProtocolID);
-		}/*
-	else if (ProtocolID==PROTOCOL_ID_ISO14230)
-		{
-		LOG("PassThruConnect: ISO 14230: ");
-		channels[curr_channel].handler = new CProtocolISO9141();
-		if (channels[curr_channel].CAN29bit)
-			LOG(" 29bit addressing")
-		else 
-			LOG(" 11bit addressing");
-		if (channels[curr_channel].extaddr)
-			LOG(" extended addressing")
-		else 
-			LOG(" standard addressing");
-		}*/
-	else if ( (ProtocolID==CAN) || (ProtocolID==CAN_PS) )//PROTOCOL_ID_RAW_CAN)
+		}
+	else if ( (ProtocolID==CAN) || (ProtocolID==CAN_PS) )
 		{
 		LOG(PROTOCOL,"PassThruConnect: CAN ");
 		ch->handler = new CProtocolCAN(ProtocolID);
 		}
-	else if ( (ProtocolID==J1850VPW) || (ProtocolID==J1850VPW_PS) ) //PROTOCOL_ID_RAW_CAN)
+	else if ( (ProtocolID==J1850VPW) || (ProtocolID==J1850VPW_PS) ) 
 		{
 		LOG(PROTOCOL,"PassThruConnect: J1850VPW ");
 		ch->handler = new CProtocolJ1850VPW(ProtocolID);
@@ -224,14 +211,9 @@ DllExport PassThruConnect(unsigned long DeviceID, unsigned long ProtocolID, unsi
 		}
 	else 
 		{
-#ifdef PLAY_STUPID_WITH_VIDA
-		ch->handler = new CProtocolCAN(ProtocolID);
-		LOG(ERR,"PassThruConnect: FIXME Protocol not supported! -> defaulting to CAN");
-#else
 		LOG(ERR,"PassThruConnect: Protocol not supported! ");
 		delete ch;
 		return last_error=ERR_NOT_SUPPORTED;
-#endif
 		}
 
 	// let's increment unique channel id counter
@@ -246,7 +228,6 @@ DllExport PassThruConnect(unsigned long DeviceID, unsigned long ProtocolID, unsi
 		delete ch;
 		return err;
 		}
-
 
 	if (AddChannel(ch)==-1)	// takes ownership
 		{
@@ -424,7 +405,7 @@ DllExport PassThruSetProgrammingVoltage(unsigned long DeviceID, unsigned long Pi
 {
 	LOG(MAINFUNC,"PassThruSetProgrammingVoltage: device id: 0x%x, pin number %d, voltage: %d",DeviceID,PinNumber,Voltage);
 
-#ifdef PLAY_STUPID
+#ifdef IGNORE_SILENTLY_UNIMPLEMENTED_FEATURES
 	LOG(ERR,"PassThruSetProgrammingVoltage:----- NOT SUPPORTED -----, ignoring");
 	return STATUS_NOERROR;
 #else
@@ -451,9 +432,9 @@ DllExport PassThruReadVersion(unsigned long DeviceID, char *pFirmwareVersion, ch
 		}
 
 	// according to specs, destination buffers must be atleast 80 chars long
-	strcpy_s(pFirmwareVersion,80,"01.00");
-	strcpy_s(pDllVersion,80,"00.01");
-	strcpy_s(pApiVersion,80,"04.04");
+	strcpy_s(pFirmwareVersion,80,SARDINE_FIRMWARE_VERSION);	// FIXME: Get the Sardine CAN version from Arduino
+	strcpy_s(pDllVersion,80,SARDINE_DLL_VERSION);
+	strcpy_s(pApiVersion,80,SARDINE_J2534_API_VERSION);
 	return last_error=STATUS_NOERROR;
 }
 
@@ -521,7 +502,7 @@ DllExport PassThruIoctl(unsigned long ChannelID, unsigned long IoctlID, void *pI
 		break;
 	case READ_VBATT:
 		LOG(ERR,"PassThruIoctl:----- NOT SUPPORTED (returning default 12 volts)-----");
-		*(unsigned long*)pOutput=12*1000;	// 12000 millivolts  FIXME
+		*(unsigned long*)pOutput=12*1000;	// 12000 millivolts.  FIXME: Get the voltage from Arduino
 		return STATUS_NOERROR;
 		break;
 	case FIVE_BAUD_INIT:

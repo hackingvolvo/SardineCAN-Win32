@@ -63,7 +63,7 @@ int CPeriodicMsg::AttachMessage(PASSTHRU_MSG * pMsg)
 	return STATUS_NOERROR;
 }
 
-// This function copied mostly from MSDN snippet
+// This function copied mostly from MSDN example
 int CPeriodicMsg::CreateTimer()
 {
 	BOOL            bSuccess;
@@ -97,8 +97,8 @@ int CPeriodicMsg::CreateTimer()
 			hTimer,                 // Handle to the timer object.
 			&liDueTime,             // When timer will become signaled first time
 			timeInterval,           // Periodic timer interval of (TimeInterval) milliseconds
-			Timer,           // Completion routine.
-			(void*)this,                // Argument to the completion routine.
+			Timer,					// Completion routine.
+			(void*)this,            // Argument to the completion routine.
 			FALSE );                // Do not restore a suspended system.
 
 		if ( bSuccess ) {
@@ -131,7 +131,6 @@ CPeriodicMsg::CPeriodicMsg(CPeriodicMsgCallback * Callback, unsigned long Id, un
 
 CPeriodicMsg::~CPeriodicMsg(void)
 {
-
 	if (msg)
 		delete msg;
 	if (hTimer)

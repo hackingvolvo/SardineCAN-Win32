@@ -8,29 +8,19 @@
 
 #define SARDINE_DEVICE_ID 0xcafebabe
 #define SARDINE_DEFAULT_CAN_BAUD_RATE 125000
+#define COMM_INIT_TIMEOUT 2000	// we wait 2 seconds for Comm thread to initialize Arduino in Sardine::Connect (though it normally should have been initialized already straight after launching the DLL)
 
+#define SARDINE_FIRMWARE_VERSION "00.20"	// FIXME: Get the Sardine CAN version from Arduino
+#define SARDINE_DLL_VERSION	"00.20"
+#define SARDINE_J2534_API_VERSION "04.04"
 
-// protocol Ids
-/*
-#define PROTOCOL_ID_ISO9141		0x03
-#define PROTOCOL_ID_ISO14230	0x04
-#define PROTOCOL_ID_RAW_CAN		0x05	// no flow control, client must handle that
-#define PROTOCOL_ID_ISO15765	0x06	// with flow control according to ISO 15765-2
-
-#define RX_STATUS_CAN29BIT	8
-#define RX_STATUS_BREAK	2
-#define RX_STATUS_ISO15765_FIRST_FRAME 1
-#define RX_STATUS_TX_MSG_TYPE 0
-
-*/
 #define MAX_J2534_MESSAGES 10
 
-#define PLAY_STUPID_WITH_VIDA
-#define PLAY_STUPID_WITH_DATAPRO
-#define PLAY_STUPID
+#define IGNORE_SILENTLY_UNIMPLEMENTED_FEATURES
+//#define ENFORCE_PROTOCOL_IDS_IN_MSGS  // seen atleast once occasion where VIDA sends msgs with protocol id 5997 when protocol is ISO 15765 (id 6)
 
 // flow status (flow control message)
-#define ISO15765_FS_CTS		0	// clear to send
+#define ISO15765_FS_CTS			0	// clear to send
 #define ISO15765_FS_WAIT		1	// wait
 #define ISO15765_FS_OVERFLOW	2	// overflow/abort
 
@@ -40,9 +30,6 @@
 #define ISO15765_PCI_CONSECUTIVE_FRAME	0x20
 #define ISO15765_PCI_FLOW_CONTROL_FRAME	0x30
 
-
-
-//#define ENFORCE_PROTOCOL_IDS_IN_MSGS  // seen atleast once occasion where VIDA sends msgs with protocol id 5997 when protocol is ISO 15765 (id 6)
 
 
 /*************/

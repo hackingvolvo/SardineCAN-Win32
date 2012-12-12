@@ -458,7 +458,7 @@ int CProtocol::SetIOCTLParam( SCONFIG * pConfig )
 	switch(pConfig->Parameter)
 		{
 		case DATA_RATE:
-#ifdef PLAY_STUPID
+#ifdef IGNORE_SILENTLY_UNIMPLEMENTED_FEATURES
 			LOG(ERR,"CProtocol::SetIOCTLParam - ignoring set DATA_RATE --- FIXME");
 			return STATUS_NOERROR;
 #else
@@ -586,7 +586,7 @@ bool CProtocol::IsLoopback()
 int CProtocol::SetJ1962Pins( unsigned long pin1, unsigned long pin2 )
 {
 	LOG(PROTOCOL,"CPRotocol::SetJ1962Pins - pin1: %d, pin2: %d", pin1, pin2);
-#ifdef PLAY_STUPID
+#ifdef IGNORE_SILENTLY_UNIMPLEMENTED_FEATURES
 	LOG(ERR,"CPRotocol::SetJ1962Pins - pin switching not really implemented, just saving given values");
 	J1962Pin1 = pin1;
 	J1962Pin2 = pin2;
@@ -600,7 +600,7 @@ int CProtocol::SetJ1962Pins( unsigned long pin1, unsigned long pin2 )
 int CProtocol::GetJ1962Pins( unsigned long * pin1, unsigned long * pin2 )
 {
 	LOG(PROTOCOL,"CPRotocol::GetJ1962Pins - pin1: %d, pin2: %d", J1962Pin1, J1962Pin2);
-#ifdef PLAY_STUPID
+#ifdef IGNORE_SILENTLY_UNIMPLEMENTED_FEATURES
 	LOG(ERR,"CPRotocol::SetJ1962Pins - pin switching not really implemented, just replying with saved values");
 	*pin1 = J1962Pin1;
 	*pin2 = J1962Pin2;
@@ -770,7 +770,7 @@ int CProtocol::StartMsgFilter( unsigned long FilterType, PASSTHRU_MSG * pMaskMsg
 	// clearing buffer so that it doesn't contain any messages that might conflict with this filter
 	ClearRXBuffer();
 
-#ifdef PLAY_STUPID
+#ifdef IGNORE_SILENTLY_UNIMPLEMENTED_FEATURES
 	LOG(ERR,"CProtocol::StartMsgFilter - not yet implemented, ignored");
 	*pFilterID=_dummy_filter_id++;
 	return STATUS_NOERROR;
@@ -783,7 +783,7 @@ int CProtocol::StartMsgFilter( unsigned long FilterType, PASSTHRU_MSG * pMaskMsg
 int CProtocol::StopMsgFilter(  unsigned long FilterID )
 {
 	LOG(PROTOCOL,"CProtocol::StopMsgFilter - filter id 0x%x", FilterID);
-#ifdef PLAY_STUPID
+#ifdef IGNORE_SILENTLY_UNIMPLEMENTED_FEATURES
 	LOG(ERR,"CProtocol::StopMsgFilter - not yet implemented, ignored");
 	return STATUS_NOERROR;
 #else

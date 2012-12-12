@@ -503,7 +503,6 @@ int OtherTests()
 		NumMsgs = 1;
 
 		LOG("InterceptorTest 1:2");
-		unsigned long msgId;
 		ret=PassThruWriteMsgs(channelId, &Msg, &NumMsgs, 1000);
 		ParseReturnValue(ret);
 		if (!ret)

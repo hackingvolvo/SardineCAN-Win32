@@ -23,7 +23,7 @@ bool CProtocolISO9141:: HandleMsg( PASSTHRU_MSG * pMsg, char * flags )
 int CProtocolISO9141::Connect(unsigned long channelId, unsigned long Flags)
 {
 	LOG(PROTOCOL,"CProtocolISO9141::Connect - flags: 0x%x",Flags);
-#ifdef PLAY_STUPID
+#ifdef IGNORE_SILENTLY_UNIMPLEMENTED_FEATURES
 	LOG(ERR,"CProtocolISO9141::Connect - not yet implemented, ignoring");
 	// call base class implementation for general settings
 	return CProtocol::Connect(channelId,Flags);
@@ -36,7 +36,7 @@ int CProtocolISO9141::Connect(unsigned long channelId, unsigned long Flags)
 int CProtocolISO9141::Disconnect() 
 {
 	LOG(PROTOCOL,"CProtocolISO9141::Disconnect");
-#ifdef PLAY_STUPID
+#ifdef IGNORE_SILENTLY_UNIMPLEMENTED_FEATURES
 	LOG(ERR,"CProtocolISO9141::Disconnect - not yet implemented, ignoring");
 	return CProtocol::Disconnect();
 #else
@@ -49,7 +49,7 @@ int CProtocolISO9141::Disconnect()
 int CProtocolISO9141::ReadMsgs( PASSTHRU_MSG * pMsgs, unsigned long * pNumMsgs, unsigned long Timeout )
 {
 	LOG(PROTOCOL,"CProtocolISO9141::ReadMsgs - pNumMsgs %d, timeout %d",*pNumMsgs,Timeout);
-#ifdef PLAY_STUPID
+#ifdef IGNORE_SILENTLY_UNIMPLEMENTED_FEATURES
 	LOG(ERR,"CProtocolISO9141::ReadMsgs - not yet implemented, ignoring");
 	return STATUS_NOERROR;
 #else
@@ -62,7 +62,7 @@ int CProtocolISO9141::ReadMsgs( PASSTHRU_MSG * pMsgs, unsigned long * pNumMsgs, 
 int CProtocolISO9141::WriteMsg( PASSTHRU_MSG * pMsg, unsigned long Timeout )
 {
 	LOG(PROTOCOL,"CProtocolISO9141::DoWriteMsg - timeout %d ",Timeout);
-#ifdef PLAY_STUPID
+#ifdef IGNORE_SILENTLY_UNIMPLEMENTED_FEATURES
 	LOG(ERR,"CProtocolISO9141::DoWriteMsg - not yet implemented, ignoring");
 	return STATUS_NOERROR;
 #else
@@ -75,7 +75,7 @@ int CProtocolISO9141::WriteMsg( PASSTHRU_MSG * pMsg, unsigned long Timeout )
 int CProtocolISO9141::StartPeriodicMsg( PASSTHRU_MSG * pMsgs, unsigned long * pMsgID, unsigned long TimeInterval)
 {
 	LOG(PROTOCOL,"CProtocolISO9141::StartPeriodicMsg - time interval %d, ",TimeInterval);
-#ifdef PLAY_STUPID
+#ifdef IGNORE_SILENTLY_UNIMPLEMENTED_FEATURES
 	LOG(ERR,"CProtocolISO9141::StartPeriodicMsg - not yet implemented, ignoring");
 	return STATUS_NOERROR;
 #else
@@ -87,7 +87,7 @@ int CProtocolISO9141::StartPeriodicMsg( PASSTHRU_MSG * pMsgs, unsigned long * pM
 int CProtocolISO9141::StopPeriodicMsg( unsigned long pMsgID)
 {
 	LOG(PROTOCOL,"CProtocolISO9141::StopPeriodicMsg ");
-#ifdef PLAY_STUPID
+#ifdef IGNORE_SILENTLY_UNIMPLEMENTED_FEATURES
 	LOG(ERR,"CProtocolISO9141::StopPeriodicMsg - not yet implemented, ignoring");
 	return STATUS_NOERROR;
 #else
@@ -188,7 +188,7 @@ int CProtocolISO9141::SetIOCTLParam( SCONFIG * pConfig )
 	LOGW(PROTOCOL,_T("CProtocolISO9141::SetIOCTLParam - parameter %d [%s]"), pConfig->Parameter,dbug_param2str(pConfig->Parameter));
 	switch(pConfig->Parameter)
 		{
-#ifdef PLAY_STUPID
+#ifdef IGNORE_SILENTLY_UNIMPLEMENTED_FEATURES
 		case P1_MIN:
 			LOG(ERR,"CProtocolISO9141::SetIOCTLParam - Setting P1_MIN on device not implemented, ignoring --- FIXME");
 			return STATUS_NOERROR;

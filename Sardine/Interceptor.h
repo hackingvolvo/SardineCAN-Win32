@@ -9,7 +9,7 @@ public:
 
 
 // class to intercept the sent messages, check if they match a preprogrammed filter and if match is found, then block the message and send message(s) back to the receive buffer
-// This is to get VIDA up and running without it connected to a car when testing. (Query for VIN will be blocked and our stored reply will be sent to VIDA instead)
+// This is to get VIDA up and running without having to connect it to a car when testing. (For example a query for VIN will be blocked and our stored reply will be sent back to VIDA instead)
 
 class CInterceptor
 {

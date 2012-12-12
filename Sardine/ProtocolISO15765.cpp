@@ -303,7 +303,7 @@ int CProtocolISO15765::GetIOCTLParam( SCONFIG * pConfig )
 			pConfig->Value=separation_time;
 			return STATUS_NOERROR;
 		case CAN_MIXED_FORMAT:
-#ifdef PLAY_STUPID
+#ifdef IGNORE_SILENTLY_UNIMPLEMENTED_FEATURES
 			LOG(ERR,"CProtocolISO15765::GetIOCTLParam - CAN_MIXED_FORMAT not implemented, returning saved value: %d",can_mixed_format);
 			pConfig->Value=can_mixed_format;
 			return STATUS_NOERROR;
@@ -335,7 +335,7 @@ int CProtocolISO15765::SetIOCTLParam( SCONFIG * pConfig )
 			separation_time=pConfig->Value;
 			return STATUS_NOERROR;
 		case CAN_MIXED_FORMAT:
-#ifdef PLAY_STUPID
+#ifdef IGNORE_SILENTLY_UNIMPLEMENTED_FEATURES
 			can_mixed_format = pConfig->Value;
 			LOG(ERR,"CProtocolISO15765::SetIOCTLParam - CAN_MIXED_FORMAT not implemented, just saving given value: %d",can_mixed_format);
 			return STATUS_NOERROR;
@@ -604,7 +604,7 @@ int CProtocolISO15765::StartMsgFilter( unsigned long FilterType, PASSTHRU_MSG * 
 int CProtocolISO15765::StopMsgFilter(  unsigned long FilterID )
 {
 	LOG(PROTOCOL,"CProtocolISO15765::StopMsgFilter - filter id %d", FilterID);
-#ifdef PLAY_STUPID
+#ifdef IGNORE_SILENTLY_UNIMPLEMENTED_FEATURES
 	LOG(ERR,"CProtocolISO15765::StopMsgFilter - not yet implemented, ignored");
 	return STATUS_NOERROR;
 #else

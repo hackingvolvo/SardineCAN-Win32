@@ -90,10 +90,10 @@ bool CPeriodicMessageHandler::createMsgHandlerThread(int channelId)
 //		sprintf_s(eventName,64,"SardineMsgHandlerEvent%x",channelId);
 
 		hMsgHandlerEvent = CreateEventA( 
-			NULL,               // default security attributes
-			TRUE,               // manual-reset event
-			FALSE,              // initial state is nonsignaled
-			NULL);  // object name
+			NULL,		// default security attributes
+			TRUE,		// manual-reset event
+			FALSE,		// initial state is nonsignaled
+			NULL);		// object name
 
 		if (hMsgHandlerEvent == NULL) 
 		{ 
@@ -144,6 +144,7 @@ int CPeriodicMessageHandler::AddPeriodicMessage(CPeriodicMsg * msg)
 	return STATUS_NOERROR;
 }
 
+
 void CPeriodicMessageHandler::RemoveAllPeriodicMessages()
 {
 	HandlerLock.Lock();
@@ -154,6 +155,7 @@ void CPeriodicMessageHandler::RemoveAllPeriodicMessages()
 	pMsgNum=0;
 	HandlerLock.Unlock();
 }
+
 
 int CPeriodicMessageHandler::RemovePeriodicMessage(unsigned long Id)
 {

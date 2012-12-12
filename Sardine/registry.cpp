@@ -56,7 +56,7 @@ namespace SardineRegistry {
 	}
 
 
-	// Get settings from Registry: If a value cannot be found in registry, original values (refernced with parameters) will not be altered
+	// Get settings from Registry: If a value cannot be found in registry, original values (referenced with parameters) will not be altered
 
 	bool GetSettingsFromRegistry( int * ComPort, int * BaudRate, int * disableDTR )
 	{

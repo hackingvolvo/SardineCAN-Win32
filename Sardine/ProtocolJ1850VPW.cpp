@@ -20,23 +20,21 @@ bool CProtocolJ1850VPW:: HandleMsg( PASSTHRU_MSG * pMsg, char * flags )
 
 int CProtocolJ1850VPW::Connect(unsigned long channelId, unsigned long Flags)
 {
-#ifdef PLAY_STUPID_WITH_DATAPRO
 	LOG(PROTOCOL,"CProtocolJ1850VPW::Connect - flags: 0x%x",Flags);
 
-	// call base class implementation for general settings
+/*
+// call base class implementation for general settings
 	return CProtocol::Connect(channelId,Flags);
-#else
+*/
 	return ERR_NOT_SUPPORTED;
-#endif
 }
 
 int CProtocolJ1850VPW::Disconnect() 
 {
-#ifdef PLAY_STUPID_WITH_DATAPRO
-	return CProtocol::Disconnect();
-#else
+/*
+return CProtocol::Disconnect();
+*/
 	return ERR_NOT_SUPPORTED;
-#endif
 }
 
 int CProtocolJ1850VPW::ReadMsgs( PASSTHRU_MSG * pMsgs, unsigned long * pNumMsgs, unsigned long Timeout )
@@ -46,41 +44,28 @@ int CProtocolJ1850VPW::ReadMsgs( PASSTHRU_MSG * pMsgs, unsigned long * pNumMsgs,
 
 int CProtocolJ1850VPW::WriteMsg( PASSTHRU_MSG * pMsg, unsigned long Timeout )
 {
-#ifdef PLAY_STUPID_WITH_DATAPRO
 	LOG(PROTOCOL_MSG,"CProtocolJ1850VPW::DoWriteMsg - timeout %d",Timeout);
 	LOG(ERR,"CProtocolJ1850VPW::DoWriteMsg  --- FIXME -- We ignore Timeout for now - call will be blocking");
 
-	if (pMsg->ProtocolID != CAN) //PROTOCOL_ID_RAW_CAN)
+	if (pMsg->ProtocolID != ProtocolID())
 	{
-		LOG(ERR,"CProtocolJ1850VPW::DoWriteMsg - invalid protocol id %d != RAW_CAN",pMsg->ProtocolID);
+		LOG(ERR,"CProtocolJ1850VPW::DoWriteMsg - invalid protocol id %d != J1850VPW",pMsg->ProtocolID);
 		return ERR_MSG_PROTOCOL_ID;
 	}
-	if ( (pMsg->DataSize <4) || (pMsg->DataSize>12) )
-	{
-		LOG(ERR,"CProtocolJ1850VPW::DoWriteMsg - invalid data length: %d",pMsg->DataSize);
-		return ERR_INVALID_MSG;
-	}
 
-	char buf[256];		
-	unsigned int j=0;
-	for (j=0;j<pMsg->DataSize;j++)
-		sprintf_s(&buf[j*3],256-j*3,"%02x ",pMsg->Data[j]);
-	int msg_len = j*3 -1;
-	buf[msg_len]=0;
-
-	LOG(PROTOCOL_MSG_VERBOSE,"CProtocolJ1850VPW::DoWriteMsg - pretending to send msg: [%s]",buf);
+	/*....construct message here */
 	/*
+	LOG(PROTOCOL_MSG_VERBOSE,"CProtocolJ1850VPW::DoWriteMsg - pretending to send msg: [%s]",buf);
 	// Delegate message sending to lower level
 	if (SendMsg(buf,msg_len)!=(msg_len))
 	{
 		LOG(ERR,"CProtocolJ1850VPW::DoWriteMsg - sending message failed!");
 		return ERR_FAILED;
 	}
-	*/
 	return STATUS_NOERROR;
-#else
+	*/
+
 	return ERR_NOT_SUPPORTED;
-#endif
 }
 
 /*
@@ -96,7 +81,7 @@ int CProtocolJ1850VPW::StopPeriodicMsg( unsigned long pMsgID)
 
 int CProtocolJ1850VPW::IOCTL(unsigned long IoctlID, void *pInput, void *pOutput)
 {
-#ifdef PLAY_STUPID_WITH_DATAPRO
+#ifdef IGNORE_SILENTLY_UNIMPLEMENTED_FEATURES_WITH_DATAPRO
 	return STATUS_NOERROR;
 #else
 	return ERR_NOT_SUPPORTED;

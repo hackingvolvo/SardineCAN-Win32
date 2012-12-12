@@ -93,14 +93,12 @@ int CProtocolCAN::Connect(unsigned long channelId, unsigned long Flags)
 	return CProtocol::Connect(channelId,Flags);
 }
 
+
 int CProtocolCAN::Disconnect() 
 {
 	LOG(PROTOCOL,"CProtocolCAN::Disconnect");
 	return CProtocol::Disconnect();
 }
-
-
-
 
 
 int CProtocolCAN::WriteMsg( PASSTHRU_MSG * pMsg, unsigned long Timeout )
@@ -156,7 +154,7 @@ int CProtocolCAN::SetIOCTLParam( SCONFIG * pConfig )
 	switch(pConfig->Parameter)
 		{
 		case BIT_SAMPLE_POINT:
-#ifdef PLAY_STUPID
+#ifdef IGNORE_SILENTLY_UNIMPLEMENTED_FEATURES
 			LOG(ERR,"CProtocolCAN::SetIOCTLParam - ignoring set BIT_SAMPLE_POINT --- FIXME");
 			return STATUS_NOERROR;
 #else
@@ -164,7 +162,7 @@ int CProtocolCAN::SetIOCTLParam( SCONFIG * pConfig )
 			return ERR_NOT_SUPPORTED;
 #endif
 		case SYNC_JUMP_WIDTH:
-#ifdef PLAY_STUPID
+#ifdef IGNORE_SILENTLY_UNIMPLEMENTED_FEATURES
 			LOG(ERR,"CProtocolCAN::SetIOCTLParam - ignoring set SYNC_JUMP_WIDTH --- FIXME");
 			return STATUS_NOERROR;
 #else

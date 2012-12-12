@@ -213,7 +213,7 @@ namespace Comm {
 			commThread = CreateThread( 
 				NULL,                   // default security attributes
 				0,                      // use default stack size  
-				StartComm,       // thread function name
+				StartComm,				// thread function name
 				NULL, /*pDataArray[i],*/          // argument to thread function 
 				0,                      // use default creation flags 
 				NULL); //&dwThreadIdArray[i]);   // returns the thread identifier 
