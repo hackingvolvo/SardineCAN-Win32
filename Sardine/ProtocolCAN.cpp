@@ -5,8 +5,6 @@
 #include "assert.h"
 
 
-
-
 bool CProtocolCAN::HandleMsg( PASSTHRU_MSG * pMsg, char * flags)
 {
 	LOG(PROTOCOL_MSG,"CProtocolCAN::HandleMsg: flags [%s]",flags);
@@ -26,7 +24,7 @@ bool CProtocolCAN::HandleMsg( PASSTHRU_MSG * pMsg, char * flags)
 	if (protocol_type=='c') // CAN bus message
 		{
 		// new CAN bus message
-		pMsg->ProtocolID = ProtocolID(); // CAN; //PROTOCOL_ID_RAW_CAN;
+		pMsg->ProtocolID = ProtocolID(); // CAN; 
 		if (pMsg->DataSize != payload_len + 4)
 			{
 			LOG(ERR,"CProtocolCAN::HandleMsg: Mismatch in msg size (DataSize %d != specified payload length %d + 4)",pMsg->DataSize,payload_len);
@@ -87,7 +85,7 @@ CProtocolCAN::~CProtocolCAN(void)
 int CProtocolCAN::Connect(unsigned long channelId, unsigned long Flags)
 {
 	LOG(PROTOCOL,"CProtocolCAN::Connect - flags: 0x%x",Flags);
-	this->address_len = ((Flags>>8)&1) ? CAN29bit : CAN11bit;
+	this->address_len = (Flags & CAN_29BIT_ID) ? CAN29bit : CAN11bit;
 	this->extended_addressing = (Flags>>7) & 1;
 	LOG(PROTOCOL,"CProtocolCAN::Connect - CAN29bit: %d, ext_addressing: %d",address_len,extended_addressing);
 
@@ -120,40 +118,12 @@ int CProtocolCAN::WriteMsg( PASSTHRU_MSG * pMsg, unsigned long Timeout )
 	flags[0] = 'c'; // protocol type
 	flags[1] = 'n'; // message type: normal message (RTR to be done) (FIXME)
 	flags[2] = (pMsg->TxFlags & CAN_29BIT_ID) ? 'x' : 'b';  // x==extended addressing (29-bit), b=normal 11-bit addressing.
-	flags[3] = '0' + pMsg->DataSize - 4; // payload length (data size - id length) in hexadecimal.
+	flags[3] = '0' + (char)(pMsg->DataSize - 4); // payload length (data size - id length) in hexadecimal.
 	flags[4] = 0;
 
 	return CProtocol::DoWriteMsg(pMsg,flags,Timeout);
 }
 
-/*
-int CProtocolCAN::StartPeriodicMsg( PASSTHRU_MSG * pMsg, unsigned long * pMsgID, unsigned long TimeInterval)
-{
-	LOG(PROTOCOL,"CProtocolCAN::StartPeriodicMsg - time interval %d milliseconds", TimeInterval);
-	dbug_printmsg(pMsg,_T("PeriodicMsg"),1,true);
-
-#ifdef PLAY_STUPID
-	LOG(ERR,"CProtocolCAN::StartPeriodicMsg - not yet implemented, ignored");
-	*pMsgID=_dummy_periodic_msg_id++;
-	return STATUS_NOERROR;
-#else
-	LOG(ERR,"CProtocolCAN::StartPeriodicMsg  --- FIXME ! does not exist");
-	return ERR_NOT_SUPPORTED;
-#endif
-}
-
-int CProtocolCAN::StopPeriodicMsg( unsigned long MsgID)
-{
-	LOG(PROTOCOL,"CProtocolCAN::StopPeriodicMsg - msg id %d",MsgID);
-#ifdef PLAY_STUPID
-	LOG(ERR,"CProtocolCAN::StopPeriodicMessages - not yet implemented, ignored");
-	return STATUS_NOERROR;
-#else
-	LOG(ERR,"CProtocolCAN::StopPeriodicMessages  --- FIXME ! does not exist");
-	return ERR_NOT_SUPPORTED;
-#endif
-}
-*/
 
 
 int CProtocolCAN::GetIOCTLParam( SCONFIG * pConfig )
@@ -176,7 +146,7 @@ int CProtocolCAN::GetIOCTLParam( SCONFIG * pConfig )
 
 	// never reach this
 	assert(0);
-	return STATUS_NOERROR;
+	return ERR_FAILED;
 }
 
 
@@ -208,9 +178,10 @@ int CProtocolCAN::SetIOCTLParam( SCONFIG * pConfig )
 
 	// never reach this
 	assert(0);
-	return STATUS_NOERROR;
+	return ERR_FAILED;
 }
 
+/*
 int CProtocolCAN::IOCTL(unsigned long IoctlID, void *pInput, void *pOutput)
 {
 	LOG(PROTOCOL,"CProtocolCAN::IOCTL - ioctl command %d", IoctlID);
@@ -227,5 +198,6 @@ int CProtocolCAN::IOCTL(unsigned long IoctlID, void *pInput, void *pOutput)
 
 	// never reach this
 	assert(0);
-	return STATUS_NOERROR;
+	return ERR_FAILED;
 }
+*/

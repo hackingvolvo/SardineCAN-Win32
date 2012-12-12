@@ -20,15 +20,15 @@ CProtocolISO15765::~CProtocolISO15765(void)
 {
 }
 
-bool CProtocolISO15765::GenerateFlowControlMsg( flowFilter * filter, unsigned int msgType )
+bool CProtocolISO15765::GenerateFlowControlMsg( flowFilter * filter, unsigned int flowStatus )
 {
-	LOG(PROTOCOL,"CProtocolISO15765::GenerateFlowControlMsg: type: %d",msgType);
+	LOG(PROTOCOL,"CProtocolISO15765::GenerateFlowControlMsg: flowStatus %d",flowStatus);
 	PASSTHRU_MSG * msg = new PASSTHRU_MSG;
 	memset(msg,0,sizeof(PASSTHRU_MSG));
 	msg->ProtocolID = ProtocolID();
 	for (int i=0;i<filter->len;i++)
 		msg->Data[i] = filter->flowControlMsg[i];
-	char PCI = ISO15765_FC_MSG_FLOW_CONTROL_FRAME | (msgType<<4);
+	char PCI = ISO15765_PCI_FLOW_CONTROL_FRAME | flowStatus; // flow control message type in high nibble, flow status in low nibble
 	if (filter->ext_addr)
 	{
 		msg->TxFlags |= ISO15765_ADDR_TYPE;
@@ -99,7 +99,7 @@ bool CProtocolISO15765::HandleIncomingFlowControlMessage( PASSTHRU_MSG * pMsg )
 }
 
 
-bool CProtocolISO15765::HandleConsecutiveFrame( PASSTHRU_MSG * pMsg )
+bool CProtocolISO15765::HandleConsecutiveFrame( PASSTHRU_MSG * pMsg, unsigned char PCI )
 {
 	LOG(PROTOCOL,"CProtocolISO15765::HandleConsecutiveFrame: length: %d",pMsg->DataSize);
 	bool lastFrame=false;
@@ -109,6 +109,14 @@ bool CProtocolISO15765::HandleConsecutiveFrame( PASSTHRU_MSG * pMsg )
 		LOG(ERR,"CProtocolISO15765::HandleConsecutiveFrame: No associated FC session with current msg found! -> ignoring msg ");
 		return false;
 	}
+	unsigned char seqNumber = PCI & 0x0F; // sequence number in low nibble of PCI
+	unsigned char expectedSeqNumber = (sessions[sidx].previousFrameSeqNumber + 1) % 16;
+	// FIXME: assemble message based on sequence number! Here we just blindly append bytes ignoring the sequence 
+	if (seqNumber != expectedSeqNumber)
+	{
+		LOG(ERR,"CProtocolISO15765::HandleConsecutiveFrame: unexpected seq number! Previous %d, current %d - FIXME: ignoring silently ",sessions[sidx].previousFrameSeqNumber,seqNumber);
+	}
+	sessions[sidx].previousFrameSeqNumber = seqNumber;
 	int remainingBytes = sessions[sidx].expected_length - sessions[sidx].payloadLen;
 	int availableBytes = pMsg->DataSize - 5;
 	if (sessions[sidx].extended_addressing)
@@ -153,7 +161,7 @@ void CProtocolISO15765::StartSession( PASSTHRU_MSG * pFirstMsg )
 	unsigned int i = 0;
 	memset(msg,0,sizeof(PASSTHRU_MSG));	
 	sessions[sessionsnum].msg = msg;
-	sessions[sessionsnum].lastMsgIndex=0;
+	sessions[sessionsnum].previousFrameSeqNumber=0;	// sequence numbering starts at 0 for first message
 	sessions[sessionsnum].extended_addressing = ((pFirstMsg->RxStatus & ISO15765_ADDR_TYPE) ? true : false);
 
 	// first copy the address (+extended address)
@@ -165,7 +173,7 @@ void CProtocolISO15765::StartSession( PASSTHRU_MSG * pFirstMsg )
 
 	// analyze the PCI bytes: total msg chunk length = low nibble of PCI1 (MSB part) + second PCI2 (LSB part)
 	sessions[sessionsnum].expected_length = (((unsigned int)pFirstMsg->Data[i] & 0xF)<<8) | (pFirstMsg->Data[i+1]);
-	// we omit copying the twp PCI bytes
+	// we omit copying the two PCI bytes
 	i+=2;
 
 	// then the payload
@@ -198,7 +206,7 @@ bool CProtocolISO15765::HandleMsg( PASSTHRU_MSG * pMsg, char * flags)
 	// first we let the CAN level handle the flag setting etc.
 	int ret = CProtocolCAN::HandleMsg( pMsg, flags);
 
-	char PCI;
+	unsigned char PCI;
 	if (pMsg->RxStatus & ISO15765_EXT_ADDR)
 		PCI = pMsg->Data[5]; // 6th byte is PCI in extended addressing
 	else
@@ -206,14 +214,15 @@ bool CProtocolISO15765::HandleMsg( PASSTHRU_MSG * pMsg, char * flags)
 
 	LOG(PROTOCOL,"CProtocolISO15765::HandleMsg: ext_addr: %d, PCI: 0x%x",(pMsg->RxStatus & ISO15765_EXT_ADDR)?1:0,PCI);
 
-	switch (PCI & 0x7) // first 4 bits of PCI
+	unsigned char N_PCItype = PCI & 0xF0; // select the high nibble of PCI
+	switch (N_PCItype) // 
 	{
-		case ISO15765_FC_MSG_SINGLE_FRAME:
+		case ISO15765_PCI_SINGLE_FRAME:
 			{
 			LOG(PROTOCOL,"CProtocolISO15765::HandleMsg: Single frame, dispatching normally");
 			return true;
 			}
-		case ISO15765_FC_MSG_FIRST_FRAME:
+		case ISO15765_PCI_FIRST_FRAME:
 			{
 			LOG(PROTOCOL,"CProtocolISO15765::HandleMsg: First frame");
 
@@ -225,7 +234,7 @@ bool CProtocolISO15765::HandleMsg( PASSTHRU_MSG * pMsg, char * flags)
 				}
 
 			// send CLEAR_TO_SEND message
-			if (GenerateFlowControlMsg(&filters[filteridx],ISO15765_CTS))
+			if (GenerateFlowControlMsg(&filters[filteridx],ISO15765_FS_CTS))
 			{
 				// Start new session, move received data from current msg to a session buffer, and place a RXStart indication msg to rx-buffer instead of this message
 				// This is done by modifying the current message (so not really sending a whole new message)
@@ -234,11 +243,11 @@ bool CProtocolISO15765::HandleMsg( PASSTHRU_MSG * pMsg, char * flags)
 			} else
 				return false;
 			} 
-		case ISO15765_FC_MSG_CONSECUTIVE_FRAME:
+		case ISO15765_PCI_CONSECUTIVE_FRAME:
 			LOG(PROTOCOL,"CProtocolISO15765::HandleMsg: Consecutive frame, not yet dispatching (unless it's last frame)");
-			HandleConsecutiveFrame(pMsg);
+			HandleConsecutiveFrame(pMsg,PCI);
 			return false;
-		case ISO15765_FC_MSG_FLOW_CONTROL_FRAME:
+		case ISO15765_PCI_FLOW_CONTROL_FRAME:
 			HandleIncomingFlowControlMessage(pMsg);
 			return false;
 		default:
@@ -256,17 +265,24 @@ int CProtocolISO15765::WriteMsg( PASSTHRU_MSG * pMsg, unsigned long Timeout )
 
 	if (!DoesMatchFilter(pMsg,true))
 		{
-		LOG(ERR,"CProtocolISO15765::DoWriteMsg - A flow control filter associated with this message (id) not found! ");
+		LOG(ERR,"CProtocolISO15765::DoWriteMsg - A flow control filter associated with this message (CAN id) not found! ");
 		return ERR_NO_FLOW_CONTROL;
 		}
 
-	if  (pMsg->DataSize>12) 
+	if (pMsg->DataSize>12) 
 	{
 		LOG(ERR,"CProtocolISO15765::DoWriteMsg - sending large messages (msg len %d) with flow control not yet implemented! failing! ",pMsg->DataSize);
 		return ERR_NOT_SUPPORTED;
 	} 
 
-	// FIXME: needs verification if need need to automatically insert PCI and ext-addr bytes?
+
+	if (pMsg->TxFlags & ISO15765_FRAME_PAD)
+	{
+		while (pMsg->DataSize < 12)
+		{
+		pMsg->Data[pMsg->DataSize++] = 0;
+		}
+	}
 
 	// Delegate message sending to lower level
 	return CProtocolCAN::WriteMsg(pMsg,Timeout);
@@ -456,12 +472,28 @@ int CProtocolISO15765::CreateFilter( PASSTHRU_MSG * pMaskMsg, PASSTHRU_MSG * pPa
 	} else
 		filters[filtersnum].ext_addr=false;
 
-	for (int i=0;i<len;i++)
+	int i;
+	for (i=0;i<len;i++)
 		{
 			filters[filtersnum].mask[i] = pMaskMsg->Data[i];
 			filters[filtersnum].pattern[i] = pPatternMsg->Data[i];
 			filters[filtersnum].flowControlMsg[i] = pFlowControlMsg->Data[i];
 		}
+	if (pFlowControlMsg->TxFlags & ISO15765_FRAME_PAD)
+	{
+		// we pad the rest with zeros
+		if  (len<12)
+		{
+			len = 12; // maximum CAN frame size: 4 header bytes, 8 data bytes
+			for (;i<len;i++)
+			{
+				filters[filtersnum].mask[i] = 0;
+				filters[filtersnum].pattern[i] = 0;
+				filters[filtersnum].flowControlMsg[i] = 0;
+			}
+		}
+	}
+
 	// increment the filter id counter and set it as a new id
 	filters[filtersnum].id = _running_filter_id++;
 	filters[filtersnum].len = len;
@@ -505,42 +537,14 @@ int CProtocolISO15765::GetMatchingFilter( PASSTHRU_MSG * pMsg, bool compareToflo
 			LOGW(PROTOCOL_VERBOSE,_T("CProtocolISO15765::GetMatchingFilter - matched filter #%d !"), i);
 			return true;
 		}
-
-/*
-for (int j=0;j<len
-		// check the address in header bytes
-		if ( (res[0]==filters[i].pattern[0]) &&
-			(res[1]==filters[i].pattern[1]) &&
-			(res[2]==filters[i].pattern[2]) &&
-			(res[3]==filters[i].pattern[3]) )
-			{
-				// possible match. Still have to check the extended address byte
-				if ( (filters[i].ext_addr) && (pMsg->TxFlags & ISO15765_EXT_ADDR) )
-				{
-					LOG(PROTOCOL_VERBOSE,_T("CProtocolISO15765::GetMatchingFilter - arbitration ID matches, checking ext.address");
-					// does the extended addr match?
-					if (res[4]==filters[i].pattern[4])
-					{
-						return i;
-					}
-					else
-					{
-						LOG(PROTOCOL_VERBOSE,_T("CProtocolISO15765::GetMatchingFilter - didn't match");
-					}
-
-				} else
-				{
-					// not using extended addressing: we have a match
-					return i;
-				}
-*/
 			
 		i++;
-		}
+	}
 	// no match found
 	LOGW(PROTOCOL_VERBOSE,_T("CProtocolISO15765::GetMatchingFilter - no match found"));
 	return -1;
 }
+
 	
 bool CProtocolISO15765::DoesMatchFilter( PASSTHRU_MSG * pMsg,  bool compareToFlowMsg )
 {

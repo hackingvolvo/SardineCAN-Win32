@@ -20,10 +20,7 @@ PASSTHRU_MSG * CloneMsg(PASSTHRU_MSG * pMsg)
 	if (_msg==NULL)
 		return NULL;
 	memcpy(_msg,pMsg,sizeof(PASSTHRU_MSG));
-//	delete msg;
-//	msg=NULL;
-
-		 return _msg;
+	return _msg;
 }
 
 VOID CALLBACK Timer(
@@ -31,7 +28,6 @@ VOID CALLBACK Timer(
 	DWORD dwTimerLowValue,      // Timer low value.
 	DWORD dwTimerHighValue ) {  // Timer high value.
 
-//	LOG(HELPERFUNC,"Timer!");
 	CPeriodicMsg * me = (CPeriodicMsg*)lpArg;
 	me->TimerSignaled();
 }

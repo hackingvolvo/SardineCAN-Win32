@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include <Windows.h>
 
+// Handles the communication thread and messaging between it and the main DLL thread
 namespace Comm {
 
 	bool createCommThread();

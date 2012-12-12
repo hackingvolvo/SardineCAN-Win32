@@ -29,14 +29,16 @@
 #define PLAY_STUPID_WITH_DATAPRO
 #define PLAY_STUPID
 
-#define ISO15765_CTS		0	// clear to send
-#define ISO15765_WAIT		1	// wait
-#define ISO15765_OVERFLOW	2	// overflow/abort
+// flow status (flow control message)
+#define ISO15765_FS_CTS		0	// clear to send
+#define ISO15765_FS_WAIT		1	// wait
+#define ISO15765_FS_OVERFLOW	2	// overflow/abort
 
-#define ISO15765_FC_MSG_SINGLE_FRAME		0
-#define ISO15765_FC_MSG_FIRST_FRAME		1
-#define ISO15765_FC_MSG_CONSECUTIVE_FRAME	2
-#define ISO15765_FC_MSG_FLOW_CONTROL_FRAME	3
+// ISO15765 message types in PCI high nibble
+#define ISO15765_PCI_SINGLE_FRAME		0x00
+#define ISO15765_PCI_FIRST_FRAME		0x10
+#define ISO15765_PCI_CONSECUTIVE_FRAME	0x20
+#define ISO15765_PCI_FLOW_CONTROL_FRAME	0x30
 
 
 

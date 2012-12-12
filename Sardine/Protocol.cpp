@@ -84,7 +84,6 @@ bool  CProtocol::ParseMsg( char * msg, int len )
 		flagslen=32;
 		}
 		strncpy_s(flags,33,&msg[5],flagslen);
-//		char * flags = &msg[5];
 
 		PASSTHRU_MSG * pmsg = new PASSTHRU_MSG;
 		memset(pmsg,0,sizeof(PASSTHRU_MSG));
@@ -115,7 +114,6 @@ bool  CProtocol::ParseMsg( char * msg, int len )
 			LOG(PROTOCOL,"CProtocol::ParseMsg: Message accepted - adding to rx buffer");
 			LogMessage(pmsg,RECEIVED,channelId,"");
 			AddToRXBuffer(pmsg);
-//			NewMessageNotification(pmsg);
 			}
 		else
 			{
@@ -382,6 +380,7 @@ int CProtocol::AddLoopbackMsg( PASSTHRU_MSG * pMsg )
 	return AddToRXBuffer(pLoopBackMsg);	// gets ownership 
 	}
 
+
 int CProtocol::WriteMsgs( PASSTHRU_MSG * pMsgs, unsigned long * pNumMsgs, unsigned long Timeout )
 {
 	LOG(PROTOCOL,"CProtocol::WriteMsgs - num_msgs: %d, timeout %d",*pNumMsgs, Timeout);
@@ -563,9 +562,7 @@ int CProtocol::IOCTL(unsigned long IoctlID, void *pInput, void *pOutput)
 		LOG(MAINFUNC,"CProtocol::IOCTL----- NOT SUPPORTED -----");
 		return ERROR_NOT_SUPPORTED;
 		break;
-
 	}
-
 	return STATUS_NOERROR;
 }
 

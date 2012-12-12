@@ -16,8 +16,8 @@ typedef struct {
 
 typedef struct {
 	PASSTHRU_MSG * msg;		// message that is being assembled from separate frames of one multi-frame message
-	unsigned int expected_length;	// length of whole message that is sent in the first frame
-	unsigned int lastMsgIndex;	// index of the last frame we have received
+	unsigned int expected_length;	// length of whole message (sent in the first frame)
+	unsigned int previousFrameSeqNumber;	// sequence number of the previous frame we have received
 	unsigned int headerLen;		// 4 or 5 bytes
 	unsigned int payloadLen;	// current size of payload assembled from frames up to now
 	bool extended_addressing;
@@ -58,8 +58,8 @@ private:
 	void DeleteSession( unsigned int sessionIdx );
 	int GetSessionByMsg( PASSTHRU_MSG * pMsg );
 	void StartSession( PASSTHRU_MSG * pFirstMsg );
-	bool GenerateFlowControlMsg( flowFilter * filter, unsigned int msgType );
-	bool HandleConsecutiveFrame( PASSTHRU_MSG * pMsg );
+	bool GenerateFlowControlMsg( flowFilter * filter, unsigned int flowStatus );
+	bool HandleConsecutiveFrame( PASSTHRU_MSG * pMsg, unsigned char PCI );
 
 	// stub for handling the incoming flow control message from other host after the first frame of our multi-frame message is sent. 
 	// FIXME: not yet implemented flow control for sending.

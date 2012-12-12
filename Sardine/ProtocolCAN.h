@@ -1,7 +1,7 @@
 #pragma once
 #include "protocol.h"
 
-#define CAN_MSG_LEVEL_DEBUGGING
+
 
 class CProtocolCAN :
 	public CProtocol
@@ -22,8 +22,8 @@ public:
 	virtual int ReadMsgs( PASSTHRU_MSG * pMsgs, unsigned long * pNumMsgs, unsigned long Timeout );
 	virtual int StartPeriodicMsg( PASSTHRU_MSG * pMsg , unsigned long * pMsgID, unsigned long TimeInterval);
 	virtual int StopPeriodicMsg( unsigned long MsgID);
-	*/
 	virtual int IOCTL(unsigned long IoctlID, void *pInput, void *pOutput);
+	*/
 
 
 	virtual int WriteMsg( PASSTHRU_MSG * pMsg, unsigned long Timeout );
