@@ -7,9 +7,10 @@
 
 
 
-bool CProtocolCAN::HandleMsg( PASSTHRU_MSG * pMsg, char * flags, int flagslen)
+bool CProtocolCAN::HandleMsg( PASSTHRU_MSG * pMsg, char * flags)
 {
 	LOG(PROTOCOL_MSG,"CProtocolCAN::HandleMsg: flags [%s]",flags);
+	int flagslen=strlen(flags);
 	if (flagslen<4)
 		{
 		LOG(ERR,"CProtocolCAN::HandleMsg: More flags required! flagslen %d",flagslen);
@@ -104,7 +105,7 @@ int CProtocolCAN::Disconnect()
 
 
 
-int CProtocolCAN::DoWriteMsg( PASSTHRU_MSG * pMsg, unsigned long Timeout )
+int CProtocolCAN::WriteMsg( PASSTHRU_MSG * pMsg, unsigned long Timeout )
 {
 	LOG(PROTOCOL,"CProtocolCAN::DoWriteMsg - timeout %d",Timeout);
 	LOG(ERR,"CProtocolCAN::DoWriteMsg  --- FIXME -- We ignore Timeout for now - call will be blocking");
@@ -115,7 +116,14 @@ int CProtocolCAN::DoWriteMsg( PASSTHRU_MSG * pMsg, unsigned long Timeout )
 		return ERR_INVALID_MSG;
 	}
 
-	return CProtocol::DoWriteMsg(pMsg,Timeout);
+	char flags[5];
+	flags[0] = 'c'; // protocol type
+	flags[1] = 'n'; // message type: normal message (RTR to be done) (FIXME)
+	flags[2] = (pMsg->TxFlags & CAN_29BIT_ID) ? 'x' : 'b';  // x==extended addressing (29-bit), b=normal 11-bit addressing.
+	flags[3] = '0' + pMsg->DataSize - 4; // payload length (data size - id length) in hexadecimal.
+	flags[4] = 0;
+
+	return CProtocol::DoWriteMsg(pMsg,flags,Timeout);
 }
 
 /*

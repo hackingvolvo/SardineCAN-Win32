@@ -14,7 +14,7 @@ CProtocolISO9141::~CProtocolISO9141(void)
 {
 }
 
-bool CProtocolISO9141:: HandleMsg( PASSTHRU_MSG * pMsg, char * flags, int flagslen )
+bool CProtocolISO9141:: HandleMsg( PASSTHRU_MSG * pMsg, char * flags )
 {
 	LOG(PROTOCOL_MSG,"CProtocolISO9141::HandleMsg - ignoring msg");
 	return false;
@@ -59,7 +59,7 @@ int CProtocolISO9141::ReadMsgs( PASSTHRU_MSG * pMsgs, unsigned long * pNumMsgs, 
 }
 */
 
-int CProtocolISO9141::DoWriteMsg( PASSTHRU_MSG * pMsg, unsigned long Timeout )
+int CProtocolISO9141::WriteMsg( PASSTHRU_MSG * pMsg, unsigned long Timeout )
 {
 	LOG(PROTOCOL,"CProtocolISO9141::DoWriteMsg - timeout %d ",Timeout);
 #ifdef PLAY_STUPID

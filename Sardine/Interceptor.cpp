@@ -32,12 +32,10 @@ static const struct interceptorFilter {
 	unsigned int size;
 	unsigned char pattern[12];
 	unsigned char mask[12];
-	unsigned int msgCount;
-	unsigned int msgs[16];
+	unsigned int msgCount;	// how many messages to send
+	unsigned int msgs[16];	// msg index numbers referring to msg_db. Now maximum of 16 messages can be sent as a reaction to a filter match
 } filters[] =
 {
-//	{ 8, 0x00,0x00,0x07,0x26,0x26,0x22,0xf1,0x14,0x00,0x00,0x00,0x00,0x00,0x00,0x00 },
-//	{ 8, 0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0x00,0x00,0x00,0x00,0x00,0x00,0x00 },
 	{ 
 		12,	{ 0x00,0x0f,0xff,0xfe,0xcb,0x40,0xb9,0xfb,0x00,0x00,0x00,0x00},
 			{ 0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0x00,0x00,0x00,0x00},
@@ -55,6 +53,7 @@ CInterceptor::~CInterceptor(void)
 {
 }
 
+// check if interceptor is enabled in Windows Registry
 bool CInterceptor::UseInterceptor()
 {
 	unsigned long useInterceptor=0;
@@ -87,7 +86,7 @@ bool CInterceptor::SendRelatedMsgs(  PASSTHRU_MSG * pMsg, int msg_index )
 	return true;
 }
 
-bool CInterceptor::SendingMsg( PASSTHRU_MSG * pMsg )
+bool CInterceptor::DoesMatchInterceptorFilter( PASSTHRU_MSG * pMsg )
 {
 	LOG(MAINFUNC,"CInterceptor::SendingMsg: protocol Id 0x%x, size: %d, TxFlags 0x%x",pMsg->ProtocolID,pMsg->DataSize,pMsg->TxFlags);
 	if ( (pMsg->ProtocolID==CAN) || (pMsg->ProtocolID==CAN_PS) )
@@ -108,9 +107,5 @@ bool CInterceptor::SendingMsg( PASSTHRU_MSG * pMsg )
 			}
 		}
 	}
-	return false;
-}
-bool CInterceptor::ReceivingMsg( PASSTHRU_MSG * pMsg )
-{
 	return false;
 }

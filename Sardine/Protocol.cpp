@@ -64,7 +64,7 @@ int CProtocol::SendPeriodicMsg( PASSTHRU_MSG * pMsg, unsigned long Id )
 		return ERR_DEVICE_NOT_CONNECTED;
 		}
 	// Write message (blocking)
-	return DoWriteMsg(pMsg,0);
+	return WriteMsg(pMsg,0);
 }
 
 
@@ -110,7 +110,7 @@ bool  CProtocol::ParseMsg( char * msg, int len )
 			}
 		pmsg->DataSize = dataIndex;
 
-		if (HandleMsg(pmsg,flags,flagslen))
+		if (HandleMsg(pmsg,flags))
 			{
 			LOG(PROTOCOL,"CProtocol::ParseMsg: Message accepted - adding to rx buffer");
 			LogMessage(pmsg,RECEIVED,channelId,"");
@@ -153,14 +153,14 @@ int CProtocol::SendInterceptorMessage( PASSTHRU_MSG * pMsg )
 }
 
 
-int CProtocol::DoWriteMsg( PASSTHRU_MSG * pMsg, unsigned long Timeout )
+int CProtocol::DoWriteMsg( PASSTHRU_MSG * pMsg, char * flags, unsigned long Timeout )
 {
 	LOG(PROTOCOL,"CProtocol::DoWriteMsg - timeout %d",Timeout);
 	LOG(ERR,"CProtocol::DoWriteMsg  --- FIXME -- We ignore Timeout for now - call will be blocking");
 
 	dbug_printmsg(pMsg,_T("Msg"),1,true);
 
-	if ( (interceptor) && (interceptor->SendingMsg(pMsg)) )
+	if ( (interceptor) && (interceptor->DoesMatchInterceptorFilter(pMsg)) )
 	{
 		LOG(PROTOCOL,"CProtocol::DoWriteMsg - message intercepted - NOT SENT!");
 		return STATUS_NOERROR;
@@ -175,7 +175,7 @@ int CProtocol::DoWriteMsg( PASSTHRU_MSG * pMsg, unsigned long Timeout )
 		buf[msg_len]=0;
 
 		// Delegate message sending to lower level
-		if (SendMsg(buf)!=(msg_len))
+		if (SendMsg(buf,flags)!=(msg_len+strlen(flags)))
 		{
 			LOG(ERR,"CProtocolCAN::DoWriteMsg - sending message failed!");
 			return ERR_FAILED;
@@ -248,17 +248,17 @@ void CProtocol::SetToListen( bool listen )
 }
 
 
-int CProtocol::SendMsg( char * msg )
+int CProtocol::SendMsg( char * msg, char * flags )
 	{
 	char buf[256];
-	int len = strlen(msg);
+	int len = strlen(msg) + strlen(flags) + 9;
 	if (len>256)
 		{
 		LOG(ERR,"CProtocol::SendMsg: Too long msg! %d",len);
 		return -1;
 		}
-	sprintf_s(buf,256,":msg [%s]",msg);
-	return Arduino::Send(buf) - 7;  // remove the decoration size
+	sprintf_s(buf,256,":msg %s [%s]",flags,msg);
+	return Arduino::Send(buf) - 8;  // remove the decoration size
 	}
 
 
@@ -411,7 +411,7 @@ int CProtocol::WriteMsgs( PASSTHRU_MSG * pMsgs, unsigned long * pNumMsgs, unsign
 			return ERR_MSG_PROTOCOL_ID;
 #endif
 		}
-		err=DoWriteMsg(curr_msg,Timeout);
+		err=WriteMsg(curr_msg,Timeout);
 		if (err!=STATUS_NOERROR)
 			{
 			LOG(ERR,"CPRotocol::WriteMsgs - error while writing msg -> aborting!");

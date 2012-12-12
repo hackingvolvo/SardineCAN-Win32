@@ -25,13 +25,18 @@ public:
 	virtual int StopMsgFilter(  unsigned long FilterID );
 	virtual int IOCTL(unsigned long IoctlID, void *pInput, void *pOutput);
 
-	int SendMsg( char * msg );
-	virtual bool HandleMsg( PASSTHRU_MSG * pMsg, char * flags, int flagslen ) = 0;
-	virtual int DoWriteMsg( PASSTHRU_MSG * pMsg, unsigned long Timeout );
+	// Higher level function will interpret the message
+	virtual bool HandleMsg( PASSTHRU_MSG * pMsg, char * flags ) = 0;
 
-	// for those high level classes that don't want to parse a message, but do want to get informed when it is accepted and added to rx buffer 
-	// for example ISO 15765 when taking care of flow control
-//	virtual void NewMessageNotification( PASSTHRU_MSG * pMsg);
+
+	// --- Message writing functions ---
+
+	// higher level function provides the necessary flags for constructing message, then calls DoWriteMsg below
+	virtual int WriteMsg( PASSTHRU_MSG * pMsg, unsigned long Timeout ) = 0;
+	// Here we convert the message to string and call SendMsg below
+	int DoWriteMsg( PASSTHRU_MSG * pMsg, char * flags, unsigned long Timeout );
+	// Here we encapsulate the message, add flags and send it to Arduino
+	int SendMsg( char * msg, char * flags );
 
 	// receive buffer handlers
 	PASSTHRU_MSG * PopMessage();			// releases ownership

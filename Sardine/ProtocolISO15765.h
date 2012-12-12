@@ -33,14 +33,14 @@ public:
 	virtual int GetIOCTLParam( SCONFIG * pConfig );
 	virtual int SetIOCTLParam( SCONFIG * pConfig );
 
-	virtual int DoWriteMsg( PASSTHRU_MSG * pMsg, unsigned long Timeout );
+	virtual int WriteMsg( PASSTHRU_MSG * pMsg, unsigned long Timeout );
 
 	virtual int DeleteFilters();
 	int StartMsgFilter( unsigned long FilterType, PASSTHRU_MSG * pMaskMsg, PASSTHRU_MSG * pPatternMsg, PASSTHRU_MSG * pFlowControlMsg, unsigned long * pFilterId );
 	int StopMsgFilter(  unsigned long FilterID );
 //	int IOCTL(unsigned long IoctlID, void *pInput, void *pOutput);
 
-	bool HandleMsg( PASSTHRU_MSG * pMsg, char * flags, int flagslen);
+	bool HandleMsg( PASSTHRU_MSG * pMsg, char * flags);
 
 private:
 

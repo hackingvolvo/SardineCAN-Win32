@@ -41,7 +41,7 @@ bool CProtocolISO15765::GenerateFlowControlMsg( flowFilter * filter, unsigned in
 	msg->DataSize = filter->len + 1;
 
 	// send the FC message
-	if (CProtocolCAN::DoWriteMsg(msg,0) != STATUS_NOERROR)
+	if (CProtocolCAN::WriteMsg(msg,0) != STATUS_NOERROR)
 	{
 		LOG(PROTOCOL,"CProtocolISO15765::GenerateFlowControlMsg: Failed sending FC message! Will not create session, ignoring this msg!");
 		return false;
@@ -192,11 +192,11 @@ void CProtocolISO15765::StartSession( PASSTHRU_MSG * pFirstMsg )
 
 
 // new message arrived. Check if it needs flow control
-bool CProtocolISO15765::HandleMsg( PASSTHRU_MSG * pMsg, char * flags, int flagslen)
+bool CProtocolISO15765::HandleMsg( PASSTHRU_MSG * pMsg, char * flags)
 {
 	LOG(PROTOCOL_MSG,"CProtocolISO15765::HandleMsg: flags [%s]");
 	// first we let the CAN level handle the flag setting etc.
-	int ret = CProtocolCAN::HandleMsg( pMsg, flags, flagslen);
+	int ret = CProtocolCAN::HandleMsg( pMsg, flags);
 
 	char PCI;
 	if (pMsg->RxStatus & ISO15765_EXT_ADDR)
@@ -248,7 +248,7 @@ bool CProtocolISO15765::HandleMsg( PASSTHRU_MSG * pMsg, char * flags, int flagsl
 }
 
 
-int CProtocolISO15765::DoWriteMsg( PASSTHRU_MSG * pMsg, unsigned long Timeout )
+int CProtocolISO15765::WriteMsg( PASSTHRU_MSG * pMsg, unsigned long Timeout )
 {
 	LOG(PROTOCOL,"CProtocolISO15765::DoWriteMsg - timeout %d",Timeout);
 
@@ -269,7 +269,7 @@ int CProtocolISO15765::DoWriteMsg( PASSTHRU_MSG * pMsg, unsigned long Timeout )
 	// FIXME: needs verification if need need to automatically insert PCI and ext-addr bytes?
 
 	// Delegate message sending to lower level
-	return CProtocolCAN::DoWriteMsg(pMsg,Timeout);
+	return CProtocolCAN::WriteMsg(pMsg,Timeout);
 }
 
 

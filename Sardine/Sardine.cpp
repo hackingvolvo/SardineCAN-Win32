@@ -1,10 +1,10 @@
+// Sardine CAN : (C) Olaf @ Hackingvolvo blog (hackingvolvo@blogspot.com)
 // Sardine.cpp : Defines the exported functions for the DLL application.
 //
 
 #include "stdafx.h"
 #include "Sardine.h"
 #include "sardine_defs.h"
-//#include "ftd2xx.h"
 #include "comm.h"
 #include "helper.h"
 #include "Benaphore.h"

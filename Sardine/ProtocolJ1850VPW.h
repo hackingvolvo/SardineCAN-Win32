@@ -10,9 +10,9 @@ public:
 	int Connect(unsigned long channelId, unsigned long Flags);
 	int Disconnect() ;
 	int ReadMsgs( PASSTHRU_MSG * pMsg, unsigned long * pNumMsgs, unsigned long Timeout );
-	int DoWriteMsg( PASSTHRU_MSG * pMsg, unsigned long Timeout );
+	int WriteMsg( PASSTHRU_MSG * pMsg, unsigned long Timeout );
 
-	bool HandleMsg( PASSTHRU_MSG * pMsg, char * flags, int flagslen );
+	bool HandleMsg( PASSTHRU_MSG * pMsg, char * flags );
 //	int IOCTL(unsigned long IoctlID, void *pInput, void *pOutput);
 
 };

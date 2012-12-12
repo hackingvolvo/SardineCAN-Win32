@@ -13,7 +13,7 @@ CProtocolJ1850VPW::~CProtocolJ1850VPW(void)
 {
 }
 
-bool CProtocolJ1850VPW:: HandleMsg( PASSTHRU_MSG * pMsg, char * flags, int flagslen )
+bool CProtocolJ1850VPW:: HandleMsg( PASSTHRU_MSG * pMsg, char * flags )
 {
 	return false;
 }
@@ -44,7 +44,7 @@ int CProtocolJ1850VPW::ReadMsgs( PASSTHRU_MSG * pMsgs, unsigned long * pNumMsgs,
 	return ERR_NOT_SUPPORTED;
 }
 
-int CProtocolJ1850VPW::DoWriteMsg( PASSTHRU_MSG * pMsg, unsigned long Timeout )
+int CProtocolJ1850VPW::WriteMsg( PASSTHRU_MSG * pMsg, unsigned long Timeout )
 {
 #ifdef PLAY_STUPID_WITH_DATAPRO
 	LOG(PROTOCOL_MSG,"CProtocolJ1850VPW::DoWriteMsg - timeout %d",Timeout);

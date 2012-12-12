@@ -26,8 +26,8 @@ public:
 	virtual int IOCTL(unsigned long IoctlID, void *pInput, void *pOutput);
 
 
-	virtual int DoWriteMsg( PASSTHRU_MSG * pMsg, unsigned long Timeout );
-	virtual bool HandleMsg( PASSTHRU_MSG * pMsg, char * flags, int flagslen );
+	virtual int WriteMsg( PASSTHRU_MSG * pMsg, unsigned long Timeout );
+	virtual bool HandleMsg( PASSTHRU_MSG * pMsg, char * flags);
 
 protected:
 	virtual int GetIOCTLParam( SCONFIG * pConfig );
