@@ -1,0 +1,33 @@
+Sardine CAN : (C) Olaf @ Hackingvolvo blog (hackingvolvo@blogspot.com)
+
+Version 0.2 alpha
+
+Please read the DLL installation instructions in INSTALLATION.txt
+
+======================= Brief explanation of most important modules: =============================
+
+- dllmain.cpp: main entry for DLL. Creating and closing comm thread is done here
+
+- Comm.cpp:  Handles Comm thread related functionality: 
+   -- Events from COM-port (error occured or bytes available in read buffer)
+   -- requests from sardine.cpp::Connect to initialize COM-port if previous initialization failed. 
+
+- Sardine.cpp: Implementation of main DLL export functions as well as few session related functions: Creates a session for each individual protocol
+  when initialized by call to Connect(). Each session contains its own Protocol-object based handler (below)
+
+- Protocol.cpp: General Protocol-agnostic handler. Includes functionality such as read buffering, low level message parsing and non-protocol specific J2534 function implementation (IOCTL etc). Also serves as a junction point for Arduino messages/notifications, periodic messages, loopback messages as well as and Interceptor functionality handling (explained below). 
+
+- ProtocolCAN.cpp, ProtocolISO15765.cpp ... : Protocol-specific extensions to Protocol.cpp. Virtual functions override base class functions, which are then later called if needed. Mainly Connect/WriteMsg/HandleMsg implementations are needed, as well as protocol specific IOCTL commands. 
+ 
+- PeriodicMessageHandler.cpp: Container for periodic messages. Owned by its parent protocol. Contains its own thread that is signaled by a timer in a periodic message. When timer goes off, callback in Protocol-class is called.
+ 
+- Arduino.cpp: Contains low-level COM-port initialization, (de)registering Protocol-class listeners (ArduinoListenerCallback), Arduino<->DLL message parsing and sending.
+ 
+- Interceptor.cpp: a module to help testing the DLL without connecting it directly to car. Contains hardcoded message filters and masks, that are tried on every outgoing message. If there is a match, then outgoing message is blocked and a substitute message (hardcoded as well) is placed into incoming buffer. For example when VIDA queries for Vehicle Identification Number (VIN), that query is blocked and a our forged reply message containing VIN is then read by VIDA. Used only if "UseInterceptor" is enabled in Windows registry. 
+Note that I have removed the reply from my own car from this published code for privacy reasons. If you want to use this functionality, you can connect VIDA to your car once, query the VIN and then browse the message log files looking for the reply to the VIN query (00 0f ff fe cb 40 b9 fb 00 00 00 00). Then hardcode the reply messages (12 message in the case of my Volvo S80 2002) to interceptor.cpp using the stub as example.
+ 
+
+
+ 
+
+ 

@@ -1,4 +1,5 @@
 // Semaphore implementation from http://preshing.com/20120226/roll-your-own-lightweight-mutex
+
 #ifndef _BENAPHORE_H
 #define _BENAPHORE_H
 

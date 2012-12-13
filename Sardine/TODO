@@ -1,12 +1,36 @@
+
+
+===== Protocol.cpp ==========================================
+- Write buffer unimplemented. Currently writing blocks
+
+===== ProtocolCAN ==========================================
+- RTR messages (?)
+- BIT_SAMPLE_POINT & SYNC_JUMP_WIDTH
+
+===== ISO 15765 =============================
+- No flow control / message disassembly implemented
+- CAN_MIXED_FORMAT
+
+===== ISO 9141 ================================
+- Everything :)
+
+===== DLL<->Arduino Communication ================
+
+===== Arduino  & DLL<->Arduino communication =========================================
 - default filter behaviour: J2534-2 states it is BLOCK ALL by default. Subsequent BLOCK_FILTERS can be used to block messages passed otherwise by PASS_FILTER
  So it is like this: BLOCK ALL unless msg matches PASS_FILTER & none of the BLOCK_FILTER match
 
-- try initializing Arduino again in PassthruConnect, if it wasn't initialized when first opening the DLL
+- add PASS/BLOCK filter functionality to Arduino (currently hard-coded to accept 00 80 xx xx)
+- Read firmware version and battery voltage 
+- commands for filter handling
+- Read & Set data rate (CAN/ISO15765/ISO9141)
+- Pin switching
+- BIT_SAMPLE_POINT & SYNC_JUMP_WIDTH (CAN)
 
-- add PASS/BLOCK filter functionality
+===== Miscellaneous ===================================
+- Load debugging log file names and paths as well as debug filters from Windows registry (now hard coded).
+- Get & set programming voltage
 
-
-- arduino sometimes doesn't assemble messages correctly. Should assemble according to newline, but for some reasing it completes assembly even when there should'nt be newline(?) 
+==== BUGS =============================================
+- arduino sometimes doesn't assemble messages correctly. Parsing should end to newline, but for some reasing it completes assembly even when there should'nt be newline(?) 
 	scan-ecu.log: 1641: [18:31:6.17]
-
-

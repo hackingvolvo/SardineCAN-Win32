@@ -404,7 +404,7 @@ int OtherTests()
 	unsigned long ret;
 	int failed=0;
 
-	LOG("InterceptorTest 1:1");
+	LOG("InterceptorTest 1:1 - NOTE! For this to work, \"UseInterceptor\" must be set to \"1\" in Windows registry!");
 	ret=PassThruConnect(SARDINE_DEVICE_ID,CAN,1<<8,SARDINE_DEFAULT_CAN_BAUD_RATE,&channelId);
 	ParseReturnValue(ret);
 	if (ret!=STATUS_NOERROR)

@@ -1,0 +1,44 @@
+DLL and log file locations are currently hard-coded:
+- Create "c:\sardine" directory
+- Copy sardine.dll there
+
+- If you want to use the DLL supplied here, install Visual Studio 2012 C++ Redistributable 
+ ( http://www.microsoft.com/en-us/download/details.aspx?id=30679 )
+ OR if you want to build your own (highly preferable, lots of bugs and "features" expected in current version), install
+  the freely available Visual C++ 2010 Express
+  ( http://www.microsoft.com/visualstudio/eng/downloads#d-2010-express )
+  Note that you have to install the 2010 redistributable package anyway if you want to use the software in another computer/installation:
+   ( http://www.microsoft.com/en-us/download/details.aspx?id=5555 )
+  If using 2010 Express, you might have to recreate the solution, since I'm not sure if it can load solutions and projects created with 2012 edition directly. 
+   
+- Add Windows registry entries:  Merge the sardine.reg (in Windows XP) or sardine_w64.reg (64bit Windows 7)
+  You can edit the .reg files to suit your needs:
+    - COM port (default 3)
+	- baud rate (0x1c200 = 115200) (however this must be changed also on the Arduino code!)
+	- "UseInterceptor" (see MANUAL.txt for more info)
+	- DISABLE_DTR (when DTR is on, Arduino is always reset when opening the com port. Reset not really needed, so I prefer leaving it disabled)
+	- ConfigApplication: Not yet implemented, just added stub for future use
+	- FunctionLibrary: Default is c:\sardine, but you can change this to something else. Note that I had headache using Windows system directories    because of SysWow64 automagic, so I prefer some other directory. Note that you still have to create the directory if you want the log files (or change the hard coded definitions in helper.h
+  You can re-merge the entries after editing the files, or edit the registry directly with regedit.exe. No need to restart Windows, since the DLL will reload the settings always when launched
+
+- You can test the functionality with automatic tester (SardineTest) or J2534 test tool by Drewtech 
+  ( http://www.drewtech.com/downloads/tools/Drew%20Technologies%20Tool%20for%20J2534-1%20API%20v1.07.msi )
+  Note that at least read tests will fail if Sardine CAN is not connected to the car.
+  
+- After launching VIDA the Sardine CAN should be one of the communication devices available. Note that the configuration tool doesn't exist yet,
+  so making VIDA launch it might crash it.
+  
+ Happy hacking!
+
+ Br,
+ Olaf
+ 
+ 
+
+
+	
+
+	
+
+ 
+ 

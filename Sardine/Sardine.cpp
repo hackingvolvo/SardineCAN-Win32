@@ -1,7 +1,22 @@
-// Sardine CAN : (C) Olaf @ Hackingvolvo blog (hackingvolvo@blogspot.com)
-// Sardine.cpp : Defines the exported functions for the DLL application.
-//
-
+/*
+**
+** Copyright (C) 2012 Olaf @ Hacking Volvo blog (hackingvolvo.blogspot.com)
+** Author: Olaf <hackingvolvo@gmail.com>
+**
+** This library is free software; you can redistribute it and/or modify
+** it under the terms of the GNU Lesser General Public License as published
+** by the Free Software Foundation, either version 3 of the License, or (at
+** your option) any later version.
+**
+** This library is distributed in the hope that it will be useful,
+** but WITHOUT ANY WARRANTY; without even the implied warranty of
+** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+** Lesser General Public License for more details.
+**
+** You should have received a copy of the GNU Lesser General Public
+** License along with this library; if not, <http://www.gnu.org/licenses/>.
+**
+*/
 #include "stdafx.h"
 #include "Sardine.h"
 #include "sardine_defs.h"
@@ -12,7 +27,6 @@
 #include "ProtocolISO9141.h"
 #include "ProtocolJ1850VPW.h"
 #include "ProtocolISO15765.h"
-
 
 namespace Sardine {
 
@@ -507,43 +521,43 @@ DllExport PassThruIoctl(unsigned long ChannelID, unsigned long IoctlID, void *pI
 		break;
 	case FIVE_BAUD_INIT:
 		Print_SByte_Array((SBYTE_ARRAY *) pInput);
-		LOG(ERR,"PassThruIoctl:----- NOT SUPPORTED -----");
+		LOG(ERR,"PassThruIoctl:----- FIVE_BAUD_INIT NOT SUPPORTED -----");
 		break;
 	case FAST_INIT:
 //		dbug_printmsg((PASSTHRU_MSG *) pInput, _T("Input"), 1, true);
-		LOG(ERR,"PassThruIoctl:----- NOT SUPPORTED -----");
+		LOG(ERR,"PassThruIoctl:----- FAST_INIT NOT SUPPORTED -----");
 		break;
 	case CLEAR_TX_BUFFER:
-		// handled by protocol impl
+		// handled by protocol level implementation
 		break;
 	case CLEAR_RX_BUFFER:
-		// handled by protocol impl
+		// handled by protocol level implementation
 		break;
 	case CLEAR_PERIODIC_MSGS:
-		// handled by protocol impl
+		// handled by protocol level implementation
 		break;
 	case CLEAR_MSG_FILTERS:
-		LOG(ERR,"PassThruIoctl:----- NOT SUPPORTED -----");
+		// handled by protocol level implementation
 		break;
 	case CLEAR_FUNCT_MSG_LOOKUP_TABLE:
-		LOG(ERR,"PassThruIoctl:----- NOT SUPPORTED -----");
+		LOG(ERR,"PassThruIoctl:----- CLEAR_FUNCT_MSG_LOOKUP_TABLE NOT SUPPORTED -----");
 		break;
 	case ADD_TO_FUNCT_MSG_LOOKUP_TABLE:
 		Print_SByte_Array((SBYTE_ARRAY *) pInput);
-		LOG(ERR,"PassThruIoctl:----- NOT SUPPORTED -----");
+		LOG(ERR,"PassThruIoctl:----- ADD_TO_FUNCT_MSG_LOOKUP_TABLE NOT SUPPORTED -----");
 		break;
 	case DELETE_FROM_FUNCT_MSG_LOOKUP_TABLE:
 		Print_SByte_Array((SBYTE_ARRAY *) pInput);
-		LOG(ERR,"PassThruIoctl:----- NOT SUPPORTED -----");
+		LOG(ERR,"PassThruIoctl:----- DELETE_FROM_FUNCT_MSG_LOOKUP_TABLE NOT SUPPORTED -----");
 		break;
 	case READ_PROG_VOLTAGE:
-		LOG(ERR,"PassThruIoctl:----- NOT SUPPORTED -----");
+		LOG(ERR,"PassThruIoctl:----- READ_PROG_VOLTAGE NOT SUPPORTED -----");
+		return ERR_NOT_SUPPORTED;
 		break;
 	default:
 		LOG(ERR,"PassThruIoctl: Invalid IOCTL command!");
 		return ERR_INVALID_IOCTL_ID;
 		break;
-
 	}
 
 	return last_error=ch->handler->IOCTL(IoctlID,pInput,pOutput);

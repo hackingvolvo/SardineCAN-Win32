@@ -184,7 +184,7 @@
 		if (hDLL==NULL)
 		{
 			LOG("Loading failed, loading from reserve location.. (c:\\sardine\\sardine.dll)");
-			hDLL = LoadLibrary(_T("c:\\sardine\\sardine.dll"));
+			hDLL = LoadLibrary(_T("c:\\sardine2\\sardine.dll"));
 		}
 
 		if (hDLL==NULL)

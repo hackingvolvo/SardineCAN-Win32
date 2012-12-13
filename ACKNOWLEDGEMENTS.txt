@@ -1,0 +1,9 @@
+Thanks goes to Joey Oravec <joravec@drewtech.com> of Drewtech for the Open Source J2534-1 tool! Few debugging functions as well as the J2534 parameters
+and function definitions were copied from its sources (j2534_v0404.h, shim_debug.cpp, shim_debug.h)  Also their SAE J2534 API reference was
+quite helpful.
+
+Light-weight semaphore by Jeff Preshing (http://preshing.com/20120226/roll-your-own-lightweight-mutex)  (Benaphore.h)
+
+A lot of code snippets from MSDN were used here and there. 
+
+

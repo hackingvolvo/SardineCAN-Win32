@@ -1,3 +1,22 @@
+/*
+**
+** Copyright (C) 2012 Olaf @ Hacking Volvo blog (hackingvolvo.blogspot.com)
+** Author: Olaf <hackingvolvo@gmail.com>
+**
+** This library is free software; you can redistribute it and/or modify
+** it under the terms of the GNU Lesser General Public License as published
+** by the Free Software Foundation, either version 3 of the License, or (at
+** your option) any later version.
+**
+** This library is distributed in the hope that it will be useful,
+** but WITHOUT ANY WARRANTY; without even the implied warranty of
+** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+** Lesser General Public License for more details.
+**
+** You should have received a copy of the GNU Lesser General Public
+** License along with this library; if not, <http://www.gnu.org/licenses/>.
+**
+*/
 #pragma once
 
 #include <fstream>
@@ -53,61 +72,73 @@ namespace debug {
 
 
 #define LOG(debug_field,message, ...){	\
- if (debug::debug_fields & debug_field)	\
+	if (debug::debug_fields & debug_field)	\
 	{									\
-	 char szMessageBuffer[1024] = {0};	\
-	 SYSTEMTIME systemTime;				\
-	 GetSystemTime( &systemTime );		\
-	 sprintf_s(szMessageBuffer, 1024, "[%2d:%2d:%2d.%3d] ",systemTime.wHour,systemTime.wMinute,systemTime.wSecond,systemTime.wMilliseconds);\
-	 std::ofstream handle;				\
-	 handle.open(SARDINE_LOG_FILE,std::ios_base::app); \
-	 handle << szMessageBuffer;			\
-	 INDENT_AND_DECORATE(handle,debug_field)	\
-	 sprintf_s(szMessageBuffer, 1024, message, __VA_ARGS__);\
-	 handle << szMessageBuffer;			\
-	 handle << "\n" << std::flush;					\
-	 }									\
+		char szMessageBuffer[1024] = {0};	\
+		SYSTEMTIME systemTime;				\
+		GetSystemTime( &systemTime );		\
+		sprintf_s(szMessageBuffer, 1024, "[%2d:%2d:%2d.%3d] ",systemTime.wHour,systemTime.wMinute,systemTime.wSecond,systemTime.wMilliseconds);\
+		std::ofstream handle;				\
+		try { \
+		handle.open(SARDINE_LOG_FILE,std::ios_base::app); \
+		handle << szMessageBuffer;			\
+		INDENT_AND_DECORATE(handle,debug_field)	\
+		sprintf_s(szMessageBuffer, 1024, message, __VA_ARGS__);\
+		handle << szMessageBuffer;			\
+		handle << "\n" << std::flush;					\
+		handle.close(); \
+		} \
+		catch(std::ofstream::failure e) {}\
+	}									\
 }
 
 #define LOG_BYTES(debug_field,count,bytes){	\
- if (debug::debug_fields & debug_field)	\
+	if (debug::debug_fields & debug_field)	\
 	{									\
-	 char szMessageBuffer[64] = {0};	\
-	 char szValBuffer[16] = {0};	\
-	 SYSTEMTIME systemTime;				\
-	 GetSystemTime( &systemTime );		\
-	 sprintf_s(szMessageBuffer, 64, "[%2d:%2d:%2d.%3d] %d bytes: ",systemTime.wHour,systemTime.wMinute,systemTime.wSecond,systemTime.wMilliseconds,count);\
-	 std::ofstream handle;				\
-	 handle.open(SARDINE_LOG_FILE,std::ios_base::app); \
-	 handle << szMessageBuffer;			\
-	 INDENT_AND_DECORATE(handle,debug_field)	\
-	 for (unsigned int i=0;i<count;i++) {			\
-		sprintf_s(szValBuffer,16,"%2x ",bytes[i]); \
-		handle << szValBuffer;	}		\
-	 handle << "\n" << std::flush;					\
-	 }									\
+		char szMessageBuffer[64] = {0};	\
+		char szValBuffer[16] = {0};	\
+		SYSTEMTIME systemTime;				\
+		GetSystemTime( &systemTime );		\
+		sprintf_s(szMessageBuffer, 64, "[%2d:%2d:%2d.%3d] %d bytes: ",systemTime.wHour,systemTime.wMinute,systemTime.wSecond,systemTime.wMilliseconds,count);\
+		std::ofstream handle;				\
+		try { \
+			handle.open(SARDINE_LOG_FILE,std::ios_base::app); \
+			handle << szMessageBuffer;			\
+			INDENT_AND_DECORATE(handle,debug_field)	\
+			for (unsigned int i=0;i<count;i++) {			\
+			sprintf_s(szValBuffer,16,"%2x ",bytes[i]); \
+			handle << szValBuffer;	}		\
+			handle << "\n" << std::flush;					\
+			handle.close(); \
+		} \
+		catch(std::ofstream::failure e) {}\
+	}									\
 }
 
 
 
 #define LOGW( debug_field, message, ...){ \
- if (debug::debug_fields & debug_field)	\
+	if (debug::debug_fields & debug_field)	\
 	{									\
-	 WCHAR szMessageBuffer[1024] = {0}; \
-	 char szMessageBufferAsc[1024] = {0}; \
-	 SYSTEMTIME systemTime; \
-	 GetSystemTime( &systemTime ); \
-	 sprintf_s(szMessageBufferAsc, 1024, "[%2d:%2d:%2d.%3d] ",systemTime.wHour,systemTime.wMinute,systemTime.wSecond,systemTime.wMilliseconds); \
-	 std::ofstream handle;  \
-	 handle.open(SARDINE_LOG_FILE,std::ios_base::app);  \
-	 handle << szMessageBufferAsc; \
-	 swprintf_s(szMessageBuffer, 1024, message, __VA_ARGS__); \
-	 char * ascbuffer = ConvertLPWSTRToLPSTR( szMessageBuffer ) ; \
-	 handle << ascbuffer; \
-	 delete ascbuffer; \
-	 handle << "\n" << std::flush; \
-	}					\
- }
+		WCHAR szMessageBuffer[1024] = {0}; \
+		char szMessageBufferAsc[1024] = {0}; \
+		SYSTEMTIME systemTime; \
+		GetSystemTime( &systemTime ); \
+		sprintf_s(szMessageBufferAsc, 1024, "[%2d:%2d:%2d.%3d] ",systemTime.wHour,systemTime.wMinute,systemTime.wSecond,systemTime.wMilliseconds); \
+		std::ofstream handle;  \
+		try { \
+			handle.open(SARDINE_LOG_FILE,std::ios_base::app);  \
+			handle << szMessageBufferAsc; \
+			swprintf_s(szMessageBuffer, 1024, message, __VA_ARGS__); \
+			char * ascbuffer = ConvertLPWSTRToLPSTR( szMessageBuffer ) ; \
+			handle << ascbuffer; \
+			delete ascbuffer; \
+			handle << "\n" << std::flush; \
+			handle.close(); \
+		} \
+		catch(std::ofstream::failure e) {}\
+	}\
+}
 
 #define  dtDebug(message, ...) LOGW(HELPERFUNC,message,__VA_ARGS__)
 

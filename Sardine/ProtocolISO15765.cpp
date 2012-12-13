@@ -1,3 +1,23 @@
+/*
+**
+** Copyright (C) 2012 Olaf @ Hacking Volvo blog (hackingvolvo.blogspot.com)
+** Author: Olaf <hackingvolvo@gmail.com>
+**
+** This library is free software; you can redistribute it and/or modify
+** it under the terms of the GNU Lesser General Public License as published
+** by the Free Software Foundation, either version 3 of the License, or (at
+** your option) any later version.
+**
+** This library is distributed in the hope that it will be useful,
+** but WITHOUT ANY WARRANTY; without even the implied warranty of
+** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+** Lesser General Public License for more details.
+**
+** You should have received a copy of the GNU Lesser General Public
+** License along with this library; if not, <http://www.gnu.org/licenses/>.
+**
+*/
+
 #include "stdafx.h"
 #include "ProtocolISO15765.h"
 #include "helper.h"
@@ -604,11 +624,20 @@ int CProtocolISO15765::StartMsgFilter( unsigned long FilterType, PASSTHRU_MSG * 
 int CProtocolISO15765::StopMsgFilter(  unsigned long FilterID )
 {
 	LOG(PROTOCOL,"CProtocolISO15765::StopMsgFilter - filter id %d", FilterID);
-#ifdef IGNORE_SILENTLY_UNIMPLEMENTED_FEATURES
-	LOG(ERR,"CProtocolISO15765::StopMsgFilter - not yet implemented, ignored");
+	unsigned int idx = GetFilterById( FilterID );
+	if (idx==-1)
+	{
+		LOG(ERR,"CProtocolISO15765::StopMsgFilter - no such filter found!");
+		return ERR_INVALID_FILTER_ID;
+	}
+	// remove corresponding PASS filter
+	CProtocol::StopMsgFilter( filters[idx].passFilterId );
+	
+	// delete flow filter
+	unsigned int i = idx;
+	for (;i<filtersnum-1;i++)
+		filters[i] = filters[i+1];
+	filtersnum--;
+
 	return STATUS_NOERROR;
-#else
-	LOG(ERR,"CProtocolISO15765::StopMsgFilter  --- FIXME ! does not exist");
-	return ERR_NOT_SUPPORTED;
-#endif
 }
