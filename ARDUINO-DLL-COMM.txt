@@ -1,0 +1,98 @@
+Communcation between Sardine DLL module and Arduino (Sardine CAN):
+
+- Communication consists of short messages, each enclosed in curly braces {} and terminated with newline \n
+- Sardine DLL sends commands to Sardine CAN. Each commands starts with colon (:), followed immediately with the command name.
+  Example: {:ping}
+- Sardine CAN sends notifications starting with exclamation mark, followed immediately with the notification name.
+  Example: {!pong}
+
+Command can be followed by zero or more parameters. Parameters can be strings, integers (hexadecimal notation) or hexadecimal chunks. Parameter is considered as hexadecimal value only if its notation begins with "0x", otherwise it is a string.
+Chunks are enclosed in [] and each chunk is considered as one parameter. Examples of parameters:
+- cnx8  (string)
+- 12345  (string)
+- 0xf0b  (value)
+- 0x0    (value)
+- [00 cf 9b]  (chunk)
+- []  (empty chunk)
+
+  
+========================== List of commands from DLL to Arduino ==============================
+
+=== msg ===================
+{:msg ffff [aa bb cc .. .. zz]}
+Sends a protocol message from DLL to Arduino. 
+ffff = flags, describing the protocol, payload size etc. First character is the protocol type ('c' for CAN). Other flags are protocol specific. Maximum of 32 flags can be set.
+
+In case of CAN / ISO15765:
+  1st flag: 'c'
+  2nd flag: message type. 'n' for normal message, 'r' for RTR message (see CAN specification for details)
+  3rd flag: addressing type: 'x' for extended (29-bit) addressing, 'b' for 11-bit addressing
+  4th flag: payload length (excluding id length). 
+Example:
+{:msg cnx8 [00 0f ff fe cb 40 b9 fb 00 00 00 00]}    (VIN query made by tester to CEM)
+
+Arduino will reply either:
+{!send_ok}   (message was succesfully placed into transfer buffer (but not necessarily sent!)
+{!send_buffer_overflow}  (transfer buffer was full)
+
+=== id ======================
+{:id [00 0f ff fe]}
+sets the id of next message to '00 0f ff fe'
+
+==== data ====================
+{:data [01 02 03 04 05 06]}
+sets the payload of next message to '01 02 03 04 05 06'
+
+===== rtr ====================
+{:rtr}
+combines the previously set ID and data and sends it as a RTR message
+
+===== send ====================
+{:send}
+combines the previously set ID and data and sends it as a normal CAN bus message
+
+===== keepalive ================
+{:keepalive 0xff}
+Sends a hard coded keep-alive message of "00 0f ff fe d8 00 00 00 00 00 00 00" to CAN bus. 
+0xff is time interval in 1/10 seconds between each message.
+Example:
+{:keepalive 0x0a}   sends keep-alive message every seconds
+
+===== version =================
+{:version}
+returns firmware version:
+{!version 0.2}
+
+===== ping ====================
+check if the communication line is still open 
+{:ping}
+returns
+{!pong}
+
+Then there are various CPM / Parking heater related test commands:
+{:heater_work_status}   
+{:coolant_temp}
+{:start_heater}
+{:stop_heater}
+
+
+
+========================== Notifications from Arduino to Sardine DLL ==============================
+
+=== msg ===================
+{!msg ffff [aa bb cc .. .. zz]}
+A message from CAN bus or other bus is received. 
+ffff = flags, describing the protocol, payload size etc. First character is the protocol type ('c' for CAN). Other flags are protocol specific. Maximum of 32 flags can be set.
+
+In case of CAN / ISO15765:
+  1st flag: 'c'
+  2nd flag: message type. 'n' for normal message, 'r' for RTR message (see CAN specification for details)
+  3rd flag: addressing type: 'x' for extended (29-bit) addressing, 'b' for 11-bit addressing
+  4th flag: payload length (excluding id length). 
+Example:
+{!msg cnx8 [00 80 00 03 8f 40 f9 fb 57 00 31 80]}    (first of many messages sent as a reply to VIN notification by CEM to the tester)
+
+======
+
+Other notifications can also be sent, such as {!empty_command}, {!invalid_arg ...} as a reaction to invalid commands
+

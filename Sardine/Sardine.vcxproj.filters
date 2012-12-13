@@ -81,6 +81,9 @@
     <ClInclude Include="Interceptor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="my_volvo_stub.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">

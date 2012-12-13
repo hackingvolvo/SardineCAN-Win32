@@ -98,6 +98,7 @@
     <ClInclude Include="helper.h" />
     <ClInclude Include="Interceptor.h" />
     <ClInclude Include="j2534_v0404.h" />
+    <ClInclude Include="my_volvo_stub.h" />
     <ClInclude Include="PeriodicMessageHandler.h" />
     <ClInclude Include="PeriodicMsg.h" />
     <ClInclude Include="Protocol.h" />

@@ -20,6 +20,19 @@
 #pragma once
 #include "sardine_defs.h"
 
+typedef struct {
+	unsigned int size;		// to how many bytes we want to apply the mask & pattern
+	unsigned char pattern[12];
+	unsigned char mask[12];
+	unsigned int msgCount;	// how many messages to send when there's a filter match
+	unsigned int msgs[16];	// msg index numbers referring to msg_db. Now maximum of 16 messages can be sent as a reaction to a filter match
+} interceptorFilter;
+
+typedef struct {
+	unsigned int size;
+	unsigned char data[12];
+} interceptorMsg;
+
 class CInterceptorCallback
 {
 public:
