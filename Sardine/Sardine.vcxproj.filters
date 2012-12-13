@@ -136,5 +136,8 @@
   </ItemGroup>
   <ItemGroup>
     <Text Include="TODO" />
+    <Text Include="..\INSTALLATION.txt" />
+    <Text Include="..\MANUAL.txt" />
+    <Text Include="..\README.txt" />
   </ItemGroup>
 </Project>

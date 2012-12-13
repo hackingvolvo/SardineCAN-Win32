@@ -142,6 +142,9 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <Text Include="..\INSTALLATION.txt" />
+    <Text Include="..\MANUAL.txt" />
+    <Text Include="..\README.txt" />
     <Text Include="TODO" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
