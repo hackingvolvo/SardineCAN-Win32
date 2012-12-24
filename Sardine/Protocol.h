@@ -86,6 +86,9 @@ public:
 
 	bool ParseMsg( char * msg, int len );
 
+	PASSTHRU_MSG * DoParseSardineMsg( char * msg, int len, char * flags );
+	PASSTHRU_MSG * DoParseUSBCANMsg( char * msg, int len, char * flags );
+
 	// callback from CPeriodicMsgCallback, when timer has gone off in one of CPeriodicMsg instances
 	int SendPeriodicMsg( PASSTHRU_MSG * pMsg, unsigned long Id );
 

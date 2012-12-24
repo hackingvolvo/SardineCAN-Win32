@@ -121,6 +121,30 @@ bool IsConnected()
 }
 
 
+int blockingWrite( char * buf, unsigned int len )
+{
+	DWORD dwwritten = 0, dwErr;
+	memset(&write_overlap, 0, sizeof(write_overlap));
+	unsigned int fSuccess = WriteFile(hCommPort, buf, len, &dwwritten, &write_overlap);
+	if (!fSuccess) 
+	{
+		dwErr = GetLastError();
+		if (dwErr != ERROR_IO_PENDING)
+			{
+			LOG(ERR,"Arduino::SendMsg - Write failed (%d)\n", GetLastError());
+			return -1;
+			}
+	}
+
+	if (!GetOverlappedResult(hCommPort, &write_overlap, &dwwritten, TRUE))
+		{
+		LOG(ERR,"Arduino::SendMsg - Error waiting for write to finish (%d)\n", GetLastError());
+		return -1;
+		}
+	return dwwritten;
+}
+
+
 int OpenDevice( int com_port, int baud_rate, int disable_DTR )
 {
 	LOG(MAINFUNC,"Arduino::OpenDevice - com port %d, baud_rate %d, disable DTR %d",com_port,baud_rate,disable_DTR);
@@ -229,11 +253,15 @@ int OpenDevice( int com_port, int baud_rate, int disable_DTR )
 		return (4);
 	}
 
-
+	blockingWrite("\r\r\r",3);
 
 	isConnected=true;
 
+#ifdef USBCAN_PROTOCOL
+	Send("Z0");	// we are not interested in time stamps, we generate our own
+#else
 	Send(":ping");
+#endif
 
 	init_lock.Unlock();
 	LOG(MAINFUNC,"Arduino::OpenDevice - port configured");
@@ -257,7 +285,7 @@ int Send(const char * cmd)
 	LOG(ARDUINO_MSG_VERBOSE,"Arduino::SendMsg - msg [%s]",cmd);
 	write_lock.Lock();
 
-	DWORD dwwritten = 0, dwErr;
+	DWORD dwwritten = 0; 
 	int len = strlen(cmd);
 
 	char buf[256];
@@ -268,29 +296,17 @@ int Send(const char * cmd)
 		return -1;
 	}
 
+#ifndef USBCAN_PROTOCOL
 	// surround message with {}
-	sprintf_s(buf,256,"{%s}\n",cmd);
-	len += 3;	// {}\n
+	sprintf_s(buf,256,"{%s}\r",cmd);
+	len += 3;	// {}\r
+#else
+	sprintf_s(buf,256,"%s\r",cmd);
+	len += 1;	// \r
+#endif
 
-	memset(&write_overlap, 0, sizeof(write_overlap));
-	unsigned int fSuccess = WriteFile(hCommPort, buf, len, &dwwritten, &write_overlap);
-	if (!fSuccess) 
-	{
-		dwErr = GetLastError();
-		if (dwErr != ERROR_IO_PENDING)
-			{
-			write_lock.Unlock();
-			LOG(ERR,"Arduino::SendMsg - Write failed (%d)\n", GetLastError());
-			return -1;
-			}
-	}
-
-	if (!GetOverlappedResult(hCommPort, &write_overlap, &dwwritten, TRUE))
-		{
-		write_lock.Unlock();
-		LOG(ERR,"Arduino::SendMsg - Error waiting for write to finish (%d)\n", GetLastError());
+	if  ( (dwwritten=blockingWrite(buf, len )) == -1)
 		return -1;
-		}
 
 	if (dwwritten != len)
 		{
@@ -298,11 +314,17 @@ int Send(const char * cmd)
 		LOG(ERR,"Arduino::SendMsg - Write didn't finish (%d out of %d bytes sent)\n", dwwritten,len);
 		return -1;
 		}
-
-	LOG(ARDUINO_MSG_VERBOSE,"Arduino::SendMsg - completed succefully: %d written (%d bytes original)",dwwritten,dwwritten-3);
 	write_lock.Unlock();
+
+#ifndef USBCAN_PROTOCOL
+	LOG(ARDUINO_MSG_VERBOSE,"Arduino::SendMsg - completed succefully: %d written (%d bytes original)",dwwritten,dwwritten-3);
 	return dwwritten-3;
+#else
+	LOG(ARDUINO_MSG_VERBOSE,"Arduino::SendMsg - completed succefully: %d written (%d bytes original)",dwwritten,dwwritten-1);
+	return dwwritten-1;
+#endif
 }
+
 
 
 
@@ -331,12 +353,14 @@ void MsgReceived( char * msg_buf, int len )
 	LOG(ARDUINO_MSG,"Arduino::MsgReceived: read: %d bytes: [%s]",len,msg_buf);
 //	LOG(ARDUINO_MSG_VERBOSE,"  Msg: [%s]",msg_buf);
 
+#ifndef USBCAN_PROTOCOL
 	if ( (msg_buf[0]=='{') && (msg_buf[len-1]=='}') )
 	{
 		// get rid of wavy brackets
 		msg_buf++;
 		len--;
 		msg_buf[len-1]=0;
+#endif
 
 		// Callback for each listener
 		int accepted=0;
@@ -349,11 +373,13 @@ void MsgReceived( char * msg_buf, int len )
 			{
 			LOG(ERR,"Arduino::MsgReceived: Warning! None of the listeners accepted the message!");
 			}
+#ifndef USBCAN_PROTOCOL
 	}
 	else
 	{
 		LOG(ERR,"Arduino::MsgReceived: Msg not inside {} ! -- ignoring [%s]",msg_buf);
 	}
+#endif
 }
 
 
@@ -371,24 +397,25 @@ VOID CALLBACK ReadRequestCompleted( DWORD errorCode, DWORD bytesRead, LPVOID ove
 		while (i<bytesRead) 
 		{
 			// handle one message  (messages separated by newline)
-			while ((cbufi<MAX_COLLECTION_BUF_SIZE) && (i<bytesRead) && (buffer[i]!='\n') )
+			while ((cbufi<MAX_COLLECTION_BUF_SIZE) && (i<bytesRead) && (buffer[i]!='\r') )
 			{
-				// carriage returns are ignored
-				if (buffer[i]!='\r')
+				// line feeds are ignored
+				if (buffer[i]!='\n')
 					collectionbuf[cbufi++] = buffer[i++];
 				else
 					i++;
 			}
 			// If we have reached end of line, handle the message. However if collectionbuf has reached is maximum size, handle it as a whole message (shouldn't happen, but just in case). 
 			// Collectionbuf is cleared in the end to make space for new messages
-			if ( (buffer[i]=='\n') || (cbufi==MAX_COLLECTION_BUF_SIZE) )
+			if ( (buffer[i]=='\r') || (cbufi==MAX_COLLECTION_BUF_SIZE) )
 				{
 				collectionbuf[cbufi]=0;
-				MsgReceived(collectionbuf,cbufi);
+				if (cbufi>0)
+					MsgReceived(collectionbuf,cbufi);
 				cbufi=0;
 				}
 			// ignore empty lines
-			if (buffer[i]=='\n')
+			if ( (buffer[i]=='\n') || (buffer[i]=='\r') )
 				i++;
 		}
 	 }

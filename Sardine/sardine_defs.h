@@ -35,6 +35,8 @@
 
 #define MAX_J2534_MESSAGES 10
 
+#define USBCAN_PROTOCOL
+
 #define IGNORE_SILENTLY_UNIMPLEMENTED_FEATURES
 //#define ENFORCE_PROTOCOL_IDS_IN_MSGS  // seen atleast once occasion where VIDA sends msgs with protocol id 5997 when protocol is ISO 15765 (id 6)
 
