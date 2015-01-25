@@ -26,20 +26,30 @@
 #include "shim_debug.h"
 #include <string.h>
 
+#define MAX_FLAGS_LEN 32
+
 bool WINAPI ArduinoListener( char * msg, int len, void * data )
 {
 	CProtocol * me = (CProtocol*)data;
 	if (me->IsListening())
 	{
+#ifdef USBCAN_PROTOCOL
+		return me->ParseMsg(msg,len);
+#else
 		if (strncmp(msg,"!msg ",5)==0)
 		{
 			return me->ParseMsg(msg,len);
+		}
+		else if (strncmp(msg,"!send_ok",8)==0)
+		{
+			// do nothing
 		}
 		else
 		{
 			LOG(ERR,"CProtocol::ArduinoListener: Ignoring [%s]",msg);
 			return false;
 		}
+#endif
 	}
 	return false;
 }
@@ -88,24 +98,25 @@ int CProtocol::SendPeriodicMsg( PASSTHRU_MSG * pMsg, unsigned long Id )
 }
 
 
-// Arduino protocol msg format: ":msg flags [01 02 03 .... 0x]'
-bool  CProtocol::ParseMsg( char * msg, int len )
+// Sardine protocol msg format: ":msg flags [01 02 03 .... 0x]'
+PASSTHRU_MSG * CProtocol::DoParseSardineMsg( char * msg, int len, char * flags )
 {
 	char * bracket_open = strchr(msg,'[');
 	char * bracket_close = strrchr(msg,']');
+	PASSTHRU_MSG * pmsg = NULL;
 	if (bracket_open && bracket_close && (bracket_open<bracket_close) && len>10)
 	{
 		// calculate the 'flags' portion of message
 		int flagslen = bracket_open-(&msg[5])-1;
-		char flags[32+1];
-		if (flagslen>32)
+
+		if (flagslen>MAX_FLAGS_LEN)
 		{
-		LOG(ERR,"CProtocol::ParseMsg: flagslen %d>32, truncating to 32",flagslen);
+		LOG(ERR,"CProtocol::DoParseSardineMsg: flagslen %d>32, truncating to 32",flagslen);
 		flagslen=32;
 		}
-		strncpy_s(flags,33,&msg[5],flagslen);
+		strncpy_s(flags,32,&msg[5],flagslen);
 
-		PASSTHRU_MSG * pmsg = new PASSTHRU_MSG;
+		pmsg = new PASSTHRU_MSG;
 		memset(pmsg,0,sizeof(PASSTHRU_MSG));
 		pmsg->Timestamp = GetTime();
 
@@ -121,40 +132,163 @@ bool  CProtocol::ParseMsg( char * msg, int len )
 				}
 			else
 				{
-				LOG(ERR,"CProtocol::ParseMsg: Invalid content in msg! [%s]",msg);
+				LOG(ERR,"CProtocol::DoParseSardineMsg: Invalid content in msg! [%s]",msg);
 				delete pmsg;
 				return false;
 				}
 			p += 3;
 			}
 		pmsg->DataSize = dataIndex;
+	} else
+	{
+		LOG(ERR,"CProtocol::ParseMsg: Not valid Arduino protocol msg: [%s]",msg);
+		return NULL;
+	}
+	return pmsg;
+}
 
-		if (HandleMsg(pmsg,flags))
+// Sardine protocol msg format: "tii..iiLdddd..dd'
+PASSTHRU_MSG * CProtocol::DoParseUSBCANMsg( char * msg, int len, char * flags )
+{
+	if (len<5)
+	{
+		LOG(ERR,"CProtocol::DoParseUSBCANMsg: too short message!");
+		return NULL;
+	}
+
+	switch(msg[0])
+	{
+	case 't':
+		{
+			flags[0]='c';
+			flags[1]='n';
+			flags[2]='b';
+
+		}
+		break;
+	case 'T':
+		{
+			flags[0]='c';
+			flags[1]='n';
+			flags[2]='x';
+		}
+		break;
+	case 'r':
+		{
+			LOG(ERR,"CProtocol::DoParseUSBCANMsg: RTR messages currently unsupported!");
+			return NULL;
+		}
+		break;
+	case 'R':
+		{
+			LOG(ERR,"CProtocol::DoParseUSBCANMsg: RTR messages currently unsupported!");
+			return NULL;
+		}
+		break;
+	default:
+		{
+			LOG(ERR,"CProtocol::DoParseUSBCANMsg: invalid message type!");
+			return NULL;
+		}
+		break;
+
+	}
+
+	PASSTHRU_MSG * pmsg = new PASSTHRU_MSG;
+	memset(pmsg,0,sizeof(PASSTHRU_MSG));
+	pmsg->Timestamp = GetTime();
+	pmsg->ProtocolID = CAN;
+
+	char *p = &msg[1];
+
+	if (flags[2]=='x')
+	{
+		pmsg->RxStatus = CAN_29BIT_ID;
+		for (int i=0;i<4;i++)
+		{
+			if ( (pmsg->Data[i]=convert_hex_to_int(p,2)) == -1)
+			{
+				LOG(ERR,"CProtocol::DoParseUSBCANMsg: Invalid address! [%s]",msg);
+				delete pmsg;
+				return NULL;
+			}
+			p += 2;
+		}
+	} else
+	{
+		if ( ((pmsg->Data[2]=convert_hex_to_int(p++,1)) == -1) || 
+			((pmsg->Data[3]=convert_hex_to_int(p,2)) == -1) )
+		{
+			LOG(ERR,"CProtocol::DoParseUSBCANMsg: Invalid address! [%s]",msg);
+			delete pmsg;
+			return NULL;
+		}
+		p += 2;
+	}
+
+	int payloadLen = convert_hex_to_int(p,1);
+	p++;
+	int expectedLen = (p-msg) + payloadLen*2;
+	if ( (expectedLen != len) && (expectedLen+4 != len) )	// 4 extra bytes for time stamp might be added, even though we disabled it
+	{
+		LOG(ERR,"CProtocol::DoParseUSBCANMsg: size mismatch! (%d != %d)!",len,expectedLen);
+		return NULL;
+	}
+	flags[3] = '0' + payloadLen;
+	flags[4] = 0;
+	pmsg->DataSize = payloadLen + 4;
+
+	for (int i=0;i<payloadLen;i++)
+	{
+		if ( (pmsg->Data[i+4]=convert_hex_to_int(p,2)) == -1)
+		{
+			LOG(ERR,"CProtocol::DoParseUSBCANMsg: Invalid payload data at index %d! [%s]",i,msg);
+			delete pmsg;
+			return NULL;
+		}
+		p += 2;
+	}
+
+	return pmsg;
+}
+
+bool CProtocol::ParseMsg( char * msg, int len )
+{
+	PASSTHRU_MSG * pMsg = NULL;
+	char flags[MAX_FLAGS_LEN+1];
+#ifdef USBCAN_PROTOCOL
+	pMsg = DoParseUSBCANMsg(msg,len,flags);
+#else
+	pMsg = DoParseSardineMsg(msg,len,flags);
+#endif
+	if (pMsg)
+	{
+		if (HandleMsg(pMsg,flags))
 			{
 			LOG(PROTOCOL,"CProtocol::ParseMsg: Message accepted - adding to rx buffer");
-			LogMessage(pmsg,RECEIVED,channelId,"");
-			AddToRXBuffer(pmsg);
+			LogMessage(pMsg,RECEIVED,channelId,"");
+			AddToRXBuffer(pMsg);
 			}
 		else
 			{
 			LOG(PROTOCOL,"CProtocol::ParseMsg: Message ignored");
-			if ( (pmsg->ProtocolID==ISO15765) || (pmsg->ProtocolID == ISO15765_PS) )
+			if ( (pMsg->ProtocolID==ISO15765) || (pMsg->ProtocolID == ISO15765_PS) )
 				{
-				LogMessage(pmsg,ISO15765_RECV,channelId," ignored before final assembly");
+				LogMessage(pMsg,ISO15765_RECV,channelId," ignored before final assembly");
 				// ISO15765 handler copied the contents from this msg. We can delete this, since we don't push it to rxbuffer 
-				delete pmsg;
+				delete pMsg;
 				}
 			else
 				{
 				// not handled by this protocol, do not log.
-				delete pmsg;
+				delete pMsg;
 				return false;
 				}
 			}
 
 	} else
 	{
-		LOG(ERR,"CProtocol::ParseMsg: Not valid Arduino protocol msg: [%s]",msg);
+		LOG(ERR,"CProtocol::ParseMsg: Not valid protocol msg: [%s]",msg);
 		return false;
 	}
 	return true;
@@ -185,22 +319,99 @@ int CProtocol::DoWriteMsg( PASSTHRU_MSG * pMsg, char * flags, unsigned long Time
 	}
 	else
 	{
-		char buf[256];		
+
+		char buf[256];
+		char * p = buf;
 		unsigned int j=0;
+#ifdef USBCAN_PROTOCOL
+		int msg_len=0;
+		if (flags[0]=='c')
+		{
+			// normal CAN msg with 11-bit addressing
+			if ( (flags[1]=='n') && (flags[2]=='b') )
+				{
+				sprintf_s(p,256,"t%01x%02x%01x",pMsg->Data[2]&0x7,pMsg->Data[3],pMsg->DataSize-4);
+				j=4;
+				p += 5;
+				}
+			// RTR CAN msg with 11-bit addressing
+			else if ( (flags[1]=='r') && (flags[2]=='b') )
+				{
+				sprintf_s(p,256,"r%01x%02x%01x",pMsg->Data[2]&0x7,pMsg->Data[3],pMsg->DataSize-4);
+				j=4;
+				p += 5;
+				}
+			// normal CAN msg with 29-bit addressing
+			else if ( (flags[1]=='n') && (flags[2]=='x') )
+				{
+				buf[0]='T';
+				p++;
+				for (j=0;j<4;j++)
+					{
+					sprintf_s(p,255-j*2,"%02x",pMsg->Data[j]);
+					p += 2;
+					}
+				// payload length
+				sprintf_s(p,255-j*2,"%01x",pMsg->DataSize-4);
+				p++;
+				}
+			// RTR CAN msg with 29-bit addressing
+			else if ( (flags[1]=='r') && (flags[2]=='x') )
+				{
+				buf[0]='R';
+				p++;
+				for (j=0;j<4;j++)
+					{
+					sprintf_s(p,255-j*2,"%02x",pMsg->Data[j]);
+					p += 2;
+					}
+				// payload length
+				sprintf_s(p,255-j*2,"%01x",pMsg->DataSize-4);
+				p++;
+				}
+			else 
+				{
+				LOG(ERR,"CProtocolCAN::SendMsg - USBCAN protocol: invalid message/address type combination!");
+				return ERR_FAILED;
+				}
+
+			// RTR messages are sent without payload
+			if (flags[1] != 'r')
+			{
+				for (;j<pMsg->DataSize;j++)
+				{
+					sprintf_s(p,254-j*2,"%02x",pMsg->Data[j]);
+					p += 2;
+				}
+			}
+
+		} else
+		{
+			LOG(ERR,"CProtocolCAN::SendMsg - USBCAN protocol currently supports only CAN!");
+			return ERR_FAILED;
+		}
+
+    	 if (Arduino::Send(buf) != strlen(buf) )
+		{
+			LOG(ERR,"CProtocolCAN::DoWriteMsg - sending message failed!");
+			return ERR_FAILED;
+		} 
+#else
 		for (j=0;j<pMsg->DataSize;j++)
 			sprintf_s(&buf[j*3],256-j*3,"%02x ",pMsg->Data[j]);
 		int msg_len = j*3 -1;
 		buf[msg_len]=0;
 
 		// Delegate message sending to lower level
-		if (SendMsg(buf,flags)!=(msg_len+strlen(flags)))
+		if (SendMsg(buf,flags)!=msg_len + strlen(flags))
 		{
 			LOG(ERR,"CProtocolCAN::DoWriteMsg - sending message failed!");
 			return ERR_FAILED;
-		} else
-		{
-		LogMessage(pMsg,SENT,channelId,"");
 		}
+#endif
+
+	LogMessage(pMsg,SENT,channelId,"");
+
 	}
 	return STATUS_NOERROR;
 }
@@ -217,10 +428,12 @@ void CProtocol::SetPinSwitched( bool pinSwitchedMode )
 	pinSwitched = pinSwitchedMode;
 }
 
+
 bool CProtocol::IsPinSwitched()
 {
 	return pinSwitched;
 }
+
 
 int CProtocol::StopPeriodicMessages()
 {
@@ -232,9 +445,13 @@ int CProtocol::StopPeriodicMessages()
 	return STATUS_NOERROR;
 }
 
+
 int CProtocol::DeleteFilters()
 {
+#ifdef USBCAN_PROTOCOL
+#else
 	Arduino::Send(":deletefilters");
+#endif
 	return 0;
 }
 
@@ -242,10 +459,40 @@ int CProtocol::DeleteFilters()
 int CProtocol::SetDatarate( unsigned long rate )
 {
 	LOG(PROTOCOL,"CProtocol::SetDatarate: %d",datarate);
-	LOG(ERR,"CProtocol::SetDatarate: --- does not actually set the datarate on device! FIXME!");
+#ifdef USBCAN_PROTOCOL
+	// close channel just in case it was open
+	Arduino::Send("C");
+	switch(rate)
+	{
+	case 125000:
+		Arduino::Send("S4");
+		break;
+	case 250000:
+		Arduino::Send("S5");
+		break;
+	case 500000:
+		Arduino::Send("S6");
+		break;
+	default:
+		LOG(ERR,"CProtocol::SetDatarate: unsupported speed!");
+		return ERR_NOT_SUPPORTED;
+		break;
+	}
+	// open the channel again
+	Arduino::Send("O");
+#else
+	// close channel just in case it was open
+	Arduino::Send(":close");
+	char buf[32];
+	sprintf_s(buf,32,":bitrate %lu",rate);
+	Arduino::Send(buf);
+	// open the channel again
+	Arduino::Send(":open");
+#endif
 	datarate = rate;
 	return STATUS_NOERROR;
 }
+
 
 int CProtocol::GetDatarate( unsigned long * rate)
 {
@@ -255,10 +502,12 @@ int CProtocol::GetDatarate( unsigned long * rate)
 	return STATUS_NOERROR;
 }
 
+
 bool CProtocol::IsListening()
 {
 	return listening;
 }
+
 
 void CProtocol::SetToListen( bool listen )
 {
@@ -291,10 +540,12 @@ void CProtocol::ClearRXBuffer()
 	rx_lock.Unlock();
 	}
 
+
 void CProtocol::ClearTXBuffer()
 	{
 	LOG(PROTOCOL,"CProtocol::ClearTXBuffer -- FIXME: not implemented!---");
 	}
+
 
 int CProtocol::DoAddToRXBuffer( PASSTHRU_MSG * pMsg )
 {
@@ -324,6 +575,7 @@ int CProtocol::DoAddToRXBuffer( PASSTHRU_MSG * pMsg )
 	return STATUS_NOERROR;
 }
 
+
 int CProtocol::AddToRXBuffer( PASSTHRU_MSG * pMsg )
 {
 	LOG(PROTOCOL,"CProtocol::AddToRXBuffer");
@@ -342,6 +594,7 @@ void CProtocol::SetRXBufferOverflow(bool status)
 	rx_lock.Unlock();
 }
 
+
 int CProtocol::GetRXMessageCount()
 {
 	rx_lock.Lock();
@@ -351,6 +604,7 @@ int CProtocol::GetRXMessageCount()
 	rx_lock.Unlock();
 	return s;
 }
+
 
 PASSTHRU_MSG * CProtocol::PopMessage()
 {
@@ -364,6 +618,7 @@ PASSTHRU_MSG * CProtocol::PopMessage()
 	return msg;
 }
 
+
 bool CProtocol::IsRXBufferOverflow() 
 {
 	rx_lock.Lock();
@@ -373,11 +628,11 @@ bool CProtocol::IsRXBufferOverflow()
 	return rxoverflow;
 }
 
+
 bool CProtocol::IsConnected()
 {
 	return Arduino::IsConnected();
 }
-
 
 
 int CProtocol::AddLoopbackMsg( PASSTHRU_MSG * pMsg )
@@ -508,7 +763,6 @@ int CProtocol::SetIOCTLParam( SCONFIG * pConfig )
 }
 
 
-
 int CProtocol::IOCTL(unsigned long IoctlID, void *pInput, void *pOutput)
 {
 	LOG(PROTOCOL,"CProtocol::IOCTL - ioctl command %d", IoctlID);
@@ -594,6 +848,7 @@ void CProtocol::SetLoopback( bool _loopback )
 	rx_lock.Unlock();
 }
 
+
 bool CProtocol::IsLoopback()
 {
 	rx_lock.Lock();
@@ -616,6 +871,7 @@ int CProtocol::SetJ1962Pins( unsigned long pin1, unsigned long pin2 )
 	return ERR_NOT_SUPPORTED;
 #endif
 }
+
 
 int CProtocol::GetJ1962Pins( unsigned long * pin1, unsigned long * pin2 )
 {
@@ -662,6 +918,7 @@ int CProtocol::Connect(unsigned long _channelId, unsigned long Flags)
 	return STATUS_NOERROR;
 }
 
+
 int CProtocol::Disconnect() 
 {
 	LOG(PROTOCOL,"CProtocol::Disconnect");
@@ -675,6 +932,7 @@ int CProtocol::Disconnect()
 
 	return STATUS_NOERROR;
 }
+
 
 int CProtocol::DoReadMsgs( PASSTHRU_MSG * pMsgs, unsigned int count, bool overflow )
 {
@@ -698,6 +956,7 @@ int CProtocol::DoReadMsgs( PASSTHRU_MSG * pMsgs, unsigned int count, bool overfl
 		return STATUS_NOERROR;
 		}
 }
+
 
 int CProtocol::ReadMsgs( PASSTHRU_MSG * pMsgs, unsigned long * pNumMsgs, unsigned long Timeout )
 {
@@ -786,7 +1045,6 @@ int CProtocol::StartMsgFilter( unsigned long FilterType, PASSTHRU_MSG * pMaskMsg
 		return ERR_INVALID_MSG;
 	}
 
-
 	// clearing buffer so that it doesn't contain any messages that might conflict with this filter
 	ClearRXBuffer();
 
@@ -799,6 +1057,7 @@ int CProtocol::StartMsgFilter( unsigned long FilterType, PASSTHRU_MSG * pMaskMsg
 	return ERR_NOT_SUPPORTED;
 #endif
 }
+
 
 int CProtocol::StopMsgFilter(  unsigned long FilterID )
 {
@@ -856,6 +1115,7 @@ int CProtocol::StartPeriodicMsg( PASSTHRU_MSG * pMsg, unsigned long * pMsgID, un
 
 		 return STATUS_NOERROR;
 }
+
 
 int CProtocol::StopPeriodicMsg( unsigned long MsgID)
 {

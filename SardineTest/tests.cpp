@@ -30,7 +30,7 @@ int ConnectTests()
 	unsigned long ret;
 
 	LOG("ConnectTest +1");
-	ret=PassThruConnect(SARDINE_DEVICE_ID, CAN,1<<8,SARDINE_DEFAULT_CAN_BAUD_RATE,&channelId);
+	ret=PassThruConnect(SARDINE_DEFAULT_DEVICE_ID, CAN,1<<8,SARDINE_DEFAULT_CAN_BAUD_RATE,&channelId);
 	ParseReturnValue(ret);
 	if (!ret)
 	{
@@ -41,7 +41,7 @@ int ConnectTests()
 	} else failed++;
 
 	LOG("ConnectTest +2");
-	ret=PassThruConnect(SARDINE_DEVICE_ID,ISO15765,1<<8,SARDINE_DEFAULT_CAN_BAUD_RATE,&channelId);
+	ret=PassThruConnect(SARDINE_DEFAULT_DEVICE_ID,ISO15765,1<<8,SARDINE_DEFAULT_CAN_BAUD_RATE,&channelId);
 	ParseReturnValue(ret);
 	if (!ret)
 	{
@@ -52,7 +52,7 @@ int ConnectTests()
 	} else failed++;
 
 	LOG("ConnectTest +3");
-	ret=PassThruConnect(SARDINE_DEVICE_ID,CAN,(1<<8)+(1<<7),SARDINE_DEFAULT_CAN_BAUD_RATE,&channelId);
+	ret=PassThruConnect(SARDINE_DEFAULT_DEVICE_ID,CAN,(1<<8)+(1<<7),SARDINE_DEFAULT_CAN_BAUD_RATE,&channelId);
 	ParseReturnValue(ret);
 	if (!ret)
 	{
@@ -63,7 +63,7 @@ int ConnectTests()
 	} else failed++;
 
 	LOG("ConnectTest +4");
-	ret=PassThruConnect(SARDINE_DEVICE_ID,ISO15765,(1<<8)+(1<<7),SARDINE_DEFAULT_CAN_BAUD_RATE,&channelId);
+	ret=PassThruConnect(SARDINE_DEFAULT_DEVICE_ID,ISO15765,(1<<8)+(1<<7),SARDINE_DEFAULT_CAN_BAUD_RATE,&channelId);
 	ParseReturnValue(ret);
 	if (!ret)
 	{
@@ -74,7 +74,7 @@ int ConnectTests()
 	} else failed++;
 
 	LOG("ConnectTest +5");
-	ret=PassThruConnect(SARDINE_DEVICE_ID,ISO9141,1<<8,SARDINE_DEFAULT_CAN_BAUD_RATE,&channelId);
+	ret=PassThruConnect(SARDINE_DEFAULT_DEVICE_ID,ISO9141,1<<8,SARDINE_DEFAULT_CAN_BAUD_RATE,&channelId);
 	ParseReturnValue(ret);
 	if (!ret)
 	{
@@ -85,7 +85,7 @@ int ConnectTests()
 	} else failed++;
 
 	LOG("ConnectTest +6");
-	ret=PassThruConnect(SARDINE_DEVICE_ID,ISO14230,1<<8,SARDINE_DEFAULT_CAN_BAUD_RATE,&channelId);
+	ret=PassThruConnect(SARDINE_DEFAULT_DEVICE_ID,ISO14230,1<<8,SARDINE_DEFAULT_CAN_BAUD_RATE,&channelId);
 	ParseReturnValue(ret);
 	if (!ret)
 	{
@@ -138,7 +138,7 @@ int ReadTests()
 	int failed=0;
 
 	LOG("ReadTest 1:1");
-	ret = PassThruConnect(SARDINE_DEVICE_ID,ISO15765, 0x00000000, SARDINE_DEFAULT_CAN_BAUD_RATE,&channelId);
+	ret = PassThruConnect(SARDINE_DEFAULT_DEVICE_ID,ISO15765, 0x00000000, SARDINE_DEFAULT_CAN_BAUD_RATE,&channelId);
 	ParseReturnValue(ret);
 	if (!ret)
 	{
@@ -176,7 +176,7 @@ int ReadTests()
 
 
 	LOG("ReadTest 2:1");
-	ret = PassThruConnect(SARDINE_DEVICE_ID,CAN, 0x00000000, SARDINE_DEFAULT_CAN_BAUD_RATE,&channelId);
+	ret = PassThruConnect(SARDINE_DEFAULT_DEVICE_ID,CAN, 0x00000000, SARDINE_DEFAULT_CAN_BAUD_RATE,&channelId);
 	ParseReturnValue(ret);
 	if (!ret)
 	{
@@ -243,7 +243,7 @@ int WriteTests()
 	char errstr[256];
 
 	LOG("WriteTest 1:1");
-	ret = PassThruConnect(SARDINE_DEVICE_ID,ISO15765, 0x00000000, SARDINE_DEFAULT_CAN_BAUD_RATE, &ChannelID);
+	ret = PassThruConnect(SARDINE_DEFAULT_DEVICE_ID,ISO15765, 0x00000000, SARDINE_DEFAULT_CAN_BAUD_RATE, &ChannelID);
 	ParseReturnValue(ret);
 	if (!ret)
 	{
@@ -349,7 +349,7 @@ int WriteTests()
 
 
 	LOG("WriteTest 2:1");
-	ret = PassThruConnect(SARDINE_DEVICE_ID,CAN, 0x00000000,SARDINE_DEFAULT_CAN_BAUD_RATE, &ChannelID);
+	ret = PassThruConnect(SARDINE_DEFAULT_DEVICE_ID,CAN, 0x00000000,SARDINE_DEFAULT_CAN_BAUD_RATE, &ChannelID);
 	ParseReturnValue(ret);
 	if (!ret)
 	{
@@ -425,7 +425,7 @@ int OtherTests()
 	int failed=0;
 
 	LOG("InterceptorTest 1:1 - NOTE! For this to work, \"UseInterceptor\" must be set to \"1\" in Windows registry!");
-	ret=PassThruConnect(SARDINE_DEVICE_ID,CAN,1<<8,SARDINE_DEFAULT_CAN_BAUD_RATE,&channelId);
+	ret=PassThruConnect(SARDINE_DEFAULT_DEVICE_ID,CAN,1<<8,SARDINE_DEFAULT_CAN_BAUD_RATE,&channelId);
 	ParseReturnValue(ret);
 	if (ret!=STATUS_NOERROR)
 	{
@@ -503,7 +503,7 @@ int OtherTests()
 	}
 
 	LOG("PeriodicMsgTest 1:1");
-	ret=PassThruConnect(SARDINE_DEVICE_ID,CAN,1<<8,SARDINE_DEFAULT_CAN_BAUD_RATE,&channelId);
+	ret=PassThruConnect(SARDINE_DEFAULT_DEVICE_ID,CAN,1<<8,SARDINE_DEFAULT_CAN_BAUD_RATE,&channelId);
 	ParseReturnValue(ret);
 	if (ret!=STATUS_NOERROR)
 	{
@@ -562,7 +562,7 @@ int IOCTLTests()
 	int failed = 0;
 
 	LOG("IOCTLtest 1:1");
-	ret=PassThruConnect(SARDINE_DEVICE_ID,CAN,1<<8,SARDINE_DEFAULT_CAN_BAUD_RATE,&channelId);
+	ret=PassThruConnect(SARDINE_DEFAULT_DEVICE_ID,CAN,1<<8,SARDINE_DEFAULT_CAN_BAUD_RATE,&channelId);
 	ParseReturnValue(ret);
 	if (ret!=STATUS_NOERROR)
 	{

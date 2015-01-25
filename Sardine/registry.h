@@ -23,7 +23,7 @@
 
 namespace SardineRegistry {
 
-bool GetSettingsFromRegistry( int * ComPort, int * BaudRate, int * disableDTR );
+bool GetSettingsFromRegistry( const char * deviceName, int * ComPort, int * BaudRate, int * disableDTR, unsigned long * deviceId );
 bool GetValueFromRegistry( HKEY previousKey, TCHAR * valueName, unsigned long * value );
 
 }

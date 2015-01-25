@@ -1,6 +1,14 @@
 Communcation between Sardine DLL module and Arduino (Sardine CAN):
 
-- Communication consists of short messages, each enclosed in curly braces {} and terminated with newline \n
+Starting from version 0.3 alpha, the Sardine CAN is using Lawicel CANUSB/CAN232 commandset by default. For detailed info, please read
+http://www.canusb.com/documents/canusb_manual.pdf
+
+The protocol description below is still valid and can be used if #define CANUSB_PROTOCOL and #define CANUSB are commented out in both Win32DLL and 
+Arduino code.
+
+============== SardineCAN protocol =====================================
+
+- Communication consists of short messages, each enclosed in curly braces {} and terminated with carriage return \c
 - Sardine DLL sends commands to Sardine CAN. Each commands starts with colon (:), followed immediately with the command name.
   Example: {:ping}
 - Sardine CAN sends notifications starting with exclamation mark, followed immediately with the notification name.

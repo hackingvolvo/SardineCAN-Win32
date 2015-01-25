@@ -25,7 +25,7 @@
 // REMINDER: SAE  J2534-2 document:  http://wenku.baidu.com/view/2f3378c30c22590102029d31.html###
 //			 SAE J2534-1 documnets : http://wenku.baidu.com/view/ac89e723dd36a32d7375813d
 
-#define SARDINE_DEVICE_ID 0xcafebabe
+#define SARDINE_DEFAULT_DEVICE_ID 0xcafebabe
 #define SARDINE_DEFAULT_CAN_BAUD_RATE 125000
 #define COMM_INIT_TIMEOUT 2000	// we wait 2 seconds for Comm thread to initialize Arduino in Sardine::Connect (though it normally should have been initialized already straight after launching the DLL)
 
@@ -34,6 +34,8 @@
 #define SARDINE_J2534_API_VERSION "04.04"
 
 #define MAX_J2534_MESSAGES 10
+
+#define USBCAN_PROTOCOL
 
 #define IGNORE_SILENTLY_UNIMPLEMENTED_FEATURES
 //#define ENFORCE_PROTOCOL_IDS_IN_MSGS  // seen atleast once occasion where VIDA sends msgs with protocol id 5997 when protocol is ISO 15765 (id 6)

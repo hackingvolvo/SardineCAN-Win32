@@ -27,6 +27,7 @@
 #include <WinSock.h>
 
 #define MAX_COLLECTION_BUF_SIZE 1024
+#define MAX_READ_BUF_SIZE 256
 #define MAX_LISTENERS 8
 
 namespace Arduino {
@@ -47,6 +48,8 @@ namespace Arduino {
 	OVERLAPPED write_overlap;
 	OVERLAPPED comm_event_overlap;
 
+	HANDLE ghWriteCompleteEvent;
+
 	DWORD dwCommEventMask;	
 
 	typedef struct {
@@ -58,7 +61,7 @@ namespace Arduino {
 	int listeners_count=0;
 
 	char collectionbuf[MAX_COLLECTION_BUF_SIZE+1];
-	char buffer[256];
+	char buffer[MAX_READ_BUF_SIZE];
 	int cbufi=0;
 
 
@@ -121,6 +124,34 @@ bool IsConnected()
 }
 
 
+int blockingWrite( char * buf, unsigned int len )
+{
+	DWORD dwwritten = 0, dwErr;
+	memset(&write_overlap, 0, sizeof(write_overlap));
+	write_overlap.hEvent = ghWriteCompleteEvent; // CreateEvent(NULL, FALSE, FALSE, NULL); // TRUE, NULL); // for some reason event 
+	unsigned int fSuccess = WriteFile(hCommPort, buf, len, &dwwritten, &write_overlap);
+	if (!fSuccess) 
+	{
+		dwErr = GetLastError();
+		if (dwErr != ERROR_IO_PENDING)
+			{
+			LOG(ERR,"Arduino::SendMsg - Write failed (%d)\n", GetLastError());
+			return -1;
+			}
+
+		// Pending IO -> Wait for the result
+	if (!GetOverlappedResult(hCommPort, &write_overlap, &dwwritten, TRUE))
+		{
+		LOG(ERR,"Arduino::SendMsg - Error waiting for write to finish (%d)\n", GetLastError());
+		return -1;
+		}
+
+	} 
+	
+	return dwwritten;
+}
+
+
 int OpenDevice( int com_port, int baud_rate, int disable_DTR )
 {
 	LOG(MAINFUNC,"Arduino::OpenDevice - com port %d, baud_rate %d, disable DTR %d",com_port,baud_rate,disable_DTR);
@@ -129,7 +160,7 @@ int OpenDevice( int com_port, int baud_rate, int disable_DTR )
 		{
 		init_lock.Unlock();
 		LOG(ERR,"Arduino::OpenDevice - already connected!");
-		return ERROR_ALREADY_INITIALIZED;
+		return ARDUINO_ALREADY_CONNECTED;
 		}
 
 	if (com_port==-1)
@@ -172,13 +203,15 @@ int OpenDevice( int com_port, int baud_rate, int disable_DTR )
 		if (err==ERROR_ALREADY_EXISTS)
 			{
 			LOG(ERR,"Arduino::OpenDevice - Already opened by other process!");
+			init_lock.Unlock();
+			return ARDUINO_IN_USE;
 			} 
 		else
 			{
 			LOG(ERR,"Arduino::OpenDevice - CreateFileA failed %d!",err);
+			init_lock.Unlock();
+			return ARDUINO_OPEN_FAILED;
 			}
-		init_lock.Unlock();
-		return (1);
 	}
 
 	LOG(MAINFUNC,"Arduino::OpenDevice - getting comm state");
@@ -191,7 +224,7 @@ int OpenDevice( int com_port, int baud_rate, int disable_DTR )
 		CloseHandle(hCommPort);
 		hCommPort=INVALID_HANDLE_VALUE;
 		init_lock.Unlock();
-		return (2);
+		return ARDUINO_GET_COMMSTATE_FAILED;
 	}
 
 	LOG(MAINFUNC,"Arduino::OpenDevice - setting comm state");
@@ -210,7 +243,7 @@ int OpenDevice( int com_port, int baud_rate, int disable_DTR )
 		hCommPort=INVALID_HANDLE_VALUE;
 		PrintError(err);
 		init_lock.Unlock();
-		return (3);
+		return ARDUINO_SET_COMMSTATE_FAILED;
 	}
 
 
@@ -226,19 +259,32 @@ int OpenDevice( int com_port, int baud_rate, int disable_DTR )
 		hCommPort=INVALID_HANDLE_VALUE;
 		PrintError(err);
 		init_lock.Unlock();
-		return (4);
+		return ARDUINO_SET_COMMMASK_FAILED;
+	}
+
+	// create event for write completed
+	if ((ghWriteCompleteEvent = CreateEvent(NULL, FALSE, FALSE, NULL)) == NULL)
+	{
+		LOG(ERR,"Arduino::OpenDevice - Create 'Write Complete Event' failed (err %d); abort!", GetLastError());
+		return ARDUINO_CREATE_EVENT_FAILED;
 	}
 
 
+	blockingWrite("\r\r\r",3);
 
 	isConnected=true;
 
+#ifdef USBCAN_PROTOCOL
+	Send("Z0");	// we are not interested in time stamps, we generate our own
+#else
 	Send(":ping");
+#endif
 
 	init_lock.Unlock();
 	LOG(MAINFUNC,"Arduino::OpenDevice - port configured");
-	return 0;
+	return ARDUINO_INIT_OK;
 }
+
 
 int CloseDevice()
 {
@@ -247,6 +293,7 @@ int CloseDevice()
 	CloseHandle(hCommPort);
 	hCommPort=INVALID_HANDLE_VALUE;
 	isConnected=0;
+	CloseHandle(ghWriteCompleteEvent);
 	init_lock.Unlock();
 	return 0;
 }
@@ -257,7 +304,7 @@ int Send(const char * cmd)
 	LOG(ARDUINO_MSG_VERBOSE,"Arduino::SendMsg - msg [%s]",cmd);
 	write_lock.Lock();
 
-	DWORD dwwritten = 0, dwErr;
+	DWORD dwwritten = 0; 
 	int len = strlen(cmd);
 
 	char buf[256];
@@ -268,27 +315,19 @@ int Send(const char * cmd)
 		return -1;
 	}
 
+#ifndef USBCAN_PROTOCOL
 	// surround message with {}
-	sprintf_s(buf,256,"{%s}\n",cmd);
-	len += 3;	// {}\n
+	sprintf_s(buf,256,"{%s}\r",cmd);
+	len += 3;	// {}\r
+#else
+	sprintf_s(buf,256,"%s\r",cmd);
+	len += 1;	// \r
+#endif
 
-	memset(&write_overlap, 0, sizeof(write_overlap));
-	unsigned int fSuccess = WriteFile(hCommPort, buf, len, &dwwritten, &write_overlap);
-	if (!fSuccess) 
-	{
-		dwErr = GetLastError();
-		if (dwErr != ERROR_IO_PENDING)
-			{
-			write_lock.Unlock();
-			LOG(ERR,"Arduino::SendMsg - Write failed (%d)\n", GetLastError());
-			return -1;
-			}
-	}
-
-	if (!GetOverlappedResult(hCommPort, &write_overlap, &dwwritten, TRUE))
+	if  ( (dwwritten=blockingWrite(buf, len )) == -1)
 		{
+		LOG(ERR,"Arduino::SendMsg - Blocking write failed ! \n");
 		write_lock.Unlock();
-		LOG(ERR,"Arduino::SendMsg - Error waiting for write to finish (%d)\n", GetLastError());
 		return -1;
 		}
 
@@ -296,13 +335,23 @@ int Send(const char * cmd)
 		{
 		write_lock.Unlock();
 		LOG(ERR,"Arduino::SendMsg - Write didn't finish (%d out of %d bytes sent)\n", dwwritten,len);
+		DWORD   dwErrors;
+		COMSTAT comStat;
+		ClearCommError(hCommPort, &dwErrors, &comStat);
+		LOG(ERR,"Arduino::SendMsg - ClearCommError: Error flags: 0x%x, bytes in output queue: %d\n", dwErrors, comStat.cbOutQue);		
 		return -1;
 		}
-
-	LOG(ARDUINO_MSG_VERBOSE,"Arduino::SendMsg - completed succefully: %d written (%d bytes original)",dwwritten,dwwritten-3);
 	write_lock.Unlock();
+
+#ifndef USBCAN_PROTOCOL
+	LOG(ARDUINO_MSG_VERBOSE,"Arduino::SendMsg - completed succefully: %d written (%d bytes original)",dwwritten,dwwritten-3);
 	return dwwritten-3;
+#else
+	LOG(ARDUINO_MSG_VERBOSE,"Arduino::SendMsg - completed succefully: %d written (%d bytes original)",dwwritten,dwwritten-1);
+	return dwwritten-1;
+#endif
 }
+
 
 
 
@@ -331,12 +380,14 @@ void MsgReceived( char * msg_buf, int len )
 	LOG(ARDUINO_MSG,"Arduino::MsgReceived: read: %d bytes: [%s]",len,msg_buf);
 //	LOG(ARDUINO_MSG_VERBOSE,"  Msg: [%s]",msg_buf);
 
+#ifndef USBCAN_PROTOCOL
 	if ( (msg_buf[0]=='{') && (msg_buf[len-1]=='}') )
 	{
 		// get rid of wavy brackets
 		msg_buf++;
 		len--;
 		msg_buf[len-1]=0;
+#endif
 
 		// Callback for each listener
 		int accepted=0;
@@ -349,11 +400,13 @@ void MsgReceived( char * msg_buf, int len )
 			{
 			LOG(ERR,"Arduino::MsgReceived: Warning! None of the listeners accepted the message!");
 			}
+#ifndef USBCAN_PROTOCOL
 	}
 	else
 	{
 		LOG(ERR,"Arduino::MsgReceived: Msg not inside {} ! -- ignoring [%s]",msg_buf);
 	}
+#endif
 }
 
 
@@ -371,24 +424,25 @@ VOID CALLBACK ReadRequestCompleted( DWORD errorCode, DWORD bytesRead, LPVOID ove
 		while (i<bytesRead) 
 		{
 			// handle one message  (messages separated by newline)
-			while ((cbufi<MAX_COLLECTION_BUF_SIZE) && (i<bytesRead) && (buffer[i]!='\n') )
+			while ((cbufi<MAX_COLLECTION_BUF_SIZE) && (i<bytesRead) && (buffer[i]!='\r') )
 			{
-				// carriage returns are ignored
-				if (buffer[i]!='\r')
+				// line feeds are ignored
+				if (buffer[i]!='\n')
 					collectionbuf[cbufi++] = buffer[i++];
 				else
 					i++;
 			}
 			// If we have reached end of line, handle the message. However if collectionbuf has reached is maximum size, handle it as a whole message (shouldn't happen, but just in case). 
 			// Collectionbuf is cleared in the end to make space for new messages
-			if ( (buffer[i]=='\n') || (cbufi==MAX_COLLECTION_BUF_SIZE) )
+			if ( (buffer[i]=='\r') || (cbufi==MAX_COLLECTION_BUF_SIZE) )
 				{
 				collectionbuf[cbufi]=0;
-				MsgReceived(collectionbuf,cbufi);
+				if (cbufi>0)
+					MsgReceived(collectionbuf,cbufi);
 				cbufi=0;
 				}
 			// ignore empty lines
-			if (buffer[i]=='\n')
+			if ( (buffer[i]=='\n') || (buffer[i]=='\r') )
 				i++;
 		}
 	 }
@@ -400,30 +454,38 @@ VOID CALLBACK ReadRequestCompleted( DWORD errorCode, DWORD bytesRead, LPVOID ove
 int BlockingRead( int bytes )
 {
 	LOG(HELPERFUNC,"Arduino::BlockingRead: read %d bytes",bytes);
-//	if (!ReadFileEx(hCommPort, buffer,1, &read_overlap, (LPOVERLAPPED_COMPLETION_ROUTINE)&ReadRequestCompleted))
-	DWORD err;
+	//	if (!ReadFileEx(hCommPort, buffer,1, &read_overlap, (LPOVERLAPPED_COMPLETION_ROUTINE)&ReadRequestCompleted))
+	DWORD err=0;
 	DWORD bytesRead;
-	memset(&read_overlap, 0, sizeof(read_overlap));
-	err=ReadFileEx(hCommPort, buffer,bytes, &read_overlap,NULL);
-	if (!err) 
+	DWORD bytesLeft = bytes;
+	while ( (bytesLeft>0) && (!err) )
 	{
-		err = GetLastError();
-		if (err!=ERROR_IO_PENDING)
+		DWORD bytesToRead = ( bytesLeft>MAX_READ_BUF_SIZE ? MAX_READ_BUF_SIZE : bytesLeft );
+
+		memset(&read_overlap, 0, sizeof(read_overlap));
+		err=ReadFileEx(hCommPort, buffer,bytesToRead, &read_overlap,NULL);
+		if (!err) 
 		{
-			LOG(ERR,"Arduino::BlockingRead: ReadFileEx error! %d",err);
+			err = GetLastError();
+			if (err!=ERROR_IO_PENDING)
+			{
+				LOG(ERR,"Arduino::BlockingRead: ReadFileEx error! %d",err);
+				return err;
+			} else
+				err=NULL; // omit ERROR_IO_PENDING since we want to continue reading
+		}		
+		if (!GetOverlappedResult(hCommPort, &read_overlap, &bytesRead, TRUE))
+		{
+			LOG(ERR,"Arduino::BlockingRead: GetOverlappedResult error! %d",err=GetLastError());
 			return err;
 		}
-	}		
-	if (!GetOverlappedResult(hCommPort, &read_overlap, &bytesRead, TRUE))
-	{
-		LOG(ERR,"Arduino::BlockingRead: GetOverlappedResult error! %d",err=GetLastError());
-		return err;
+		if (bytesRead != bytes)
+		{
+			LOG(ERR,"Arduino::BlockingRead: bytes read (%d) != bytes requested (%d)! Still handling the bytes we got..",bytesRead,bytes);
+		}
+		ReadRequestCompleted(0,bytesRead,&read_overlap);
+		bytesLeft -= bytesRead;
 	}
-	if (bytesRead != bytes)
-	{
-		LOG(ERR,"Arduino::BlockingRead: bytes read (%d) != bytes requested (%d)! Still handling the bytes we got..",bytesRead,bytes);
-	}
-	ReadRequestCompleted(0,bytesRead,&read_overlap);
 	return STATUS_NOERROR;
 }
 

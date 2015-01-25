@@ -78,7 +78,7 @@ namespace SardineRegistry {
 
 	// Get settings from Registry: If a value cannot be found in registry, original values (referenced with parameters) will not be altered
 
-	bool GetSettingsFromRegistry( int * ComPort, int * BaudRate, int * disableDTR )
+	bool GetSettingsFromRegistry( const char * DeviceName,  int * ComPort, int * BaudRate, int * disableDTR, unsigned long * deviceId )
 	{
 		HKEY hKeySoftware, hKeyPTS0404, hKeySardineCAN; 
 		//	DWORD KeyType, KeySize;
@@ -97,7 +97,24 @@ namespace SardineRegistry {
 		}
 		RegCloseKey(hKeySoftware);
 
-		if (RegOpenKeyEx(hKeyPTS0404, L"Sardine CAN", 0, KEY_READ , &hKeySardineCAN) != ERROR_SUCCESS)
+		
+		WCHAR DeviceNameW[256];
+		if (DeviceName != NULL)
+		{
+			size_t converted = 0;
+			int ret = mbstowcs_s(&converted,DeviceNameW,strlen(DeviceName)+1,DeviceName,_TRUNCATE);
+			if ((ret!=0) || (converted != (strlen(DeviceName)+1)) )
+			{
+				LOG(ERR,"GetSettingsFromRegistry: Invalid DeviceName");
+				return false;
+			}
+		} else
+		{
+			wcscpy_s(DeviceNameW,80,L"Sardine CAN");
+		}
+
+//		if (RegOpenKeyEx(hKeyPTS0404, L"Sardine CAN", 0, KEY_READ , &hKeySardineCAN) != ERROR_SUCCESS)
+		if (RegOpenKeyEx(hKeyPTS0404, DeviceNameW, 0, KEY_READ , &hKeySardineCAN) != ERROR_SUCCESS)
 		{
 			LOG(ERR,"GetSettingsFromRegistry: Couldn't find our Sardine CAN entry in registry!");
 			RegCloseKey(hKeyPTS0404);
@@ -126,6 +143,12 @@ namespace SardineRegistry {
 		else
 			*disableDTR = dwVal;
 
+		if (Registry_GetDWord(hKeySardineCAN,TEXT("DeviceID"),&dwVal) != ERROR_SUCCESS)
+		{
+			LOG(ERR,"GetSettingsFromRegistry: No Device ID entry!");
+		}
+		else
+			*deviceId = dwVal;
 
 		RegCloseKey(hKeySardineCAN);
 		return true;

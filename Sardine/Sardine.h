@@ -37,3 +37,5 @@ DllExport PassThruSetProgrammingVoltage(unsigned long DeviceID, unsigned long Pi
 DllExport PassThruReadVersion(unsigned long DeviceID, char *pFirmwareVersion, char *pDllVersion, char *pApiVersion);
 DllExport PassThruGetLastError(char *pErrorDescription);
 DllExport PassThruIoctl(unsigned long ChannelID, unsigned long IoctlID, void *pInput, void *pOutput);
+
+

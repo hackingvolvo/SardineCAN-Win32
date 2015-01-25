@@ -26,13 +26,13 @@
 bool setup()
 {
 	LOG(INIT,"Sardine: setup");
-	return Comm::createCommThread();
+	return Comm::CreateCommThread();
 }
 
 void exitdll()
 {
 	LOG(INIT,"Sardine: Exitdll");
-	Comm::closeCommThread();
+	Comm::CloseCommThread();
 }
 
 BOOL APIENTRY DllMain( HMODULE hModule,
@@ -40,7 +40,7 @@ BOOL APIENTRY DllMain( HMODULE hModule,
                        LPVOID lpReserved
 					 )
 {
-	LOG(INIT,"Sardine v0.2 : (c) Olaf @ HackingVolvo Labs 2012");
+	LOG(INIT,"Sardine v0.3 : (c) Olaf @ HackingVolvo Labs 2012");
 	LOG(INIT,"DllMain: %d",ul_reason_for_call);
 	switch (ul_reason_for_call)
 	{

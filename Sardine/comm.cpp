@@ -26,7 +26,7 @@
 
 namespace Comm {
 
-	HANDLE ghInitCompleteEvent;	// signaled to other threads when arduino is connected
+	HANDLE ghInitReqCompleteEvent;	// signaled to other threads when arduino initialization ended (either succeeded or failed)
 	HANDLE ghRequestInitEvent;	// other threads can request init, if first one failed.
 	HANDLE ghCommEvent;			// comm event (bytes available in read buffer, com error etc.)
 	HANDLE ghCommExitEvent;		// request for exiting, issued by main thread
@@ -34,61 +34,147 @@ namespace Comm {
 	HANDLE waitHandles[10];
 	int waitHandleCount=0;
 
+	int arduinoInitErrorCode;
+	char ErrorMsg[80];
+
+	char RequestedDeviceName[256];
+	unsigned long deviceId;
+
 	HANDLE  commThread=NULL;
 
-	void SetInitialized()
+	bool IsConnected()
 	{
-		LOG(HELPERFUNC,"Comm::SetInitialized");
-		SetEvent(ghInitCompleteEvent);
+		return Arduino::IsConnected();
 	}
 
-	void RequestInitialization()
+	const char * GetCommErrorMsg()
+	{
+		return &ErrorMsg[0];
+	}
+
+	unsigned long GetDeviceId()
+	{
+		return deviceId;
+	}
+
+	void SetInitReqComplete()
+	{
+		LOG(HELPERFUNC,"Comm::SetInitReqComplete");
+		SetEvent(ghInitReqCompleteEvent);
+	}
+
+	void RequestInitialization( const char * deviceName )
 	{
 		LOG(HELPERFUNC,"Comm::RequestInitialization");
+		if (deviceName)
+		{
+		if (strlen(deviceName) < 256 )
+			strcpy_s(RequestedDeviceName, 256, deviceName);
+		else
+			strncpy_s(RequestedDeviceName, deviceName,256);
+		} else
+			strcpy_s(RequestedDeviceName,256,"");
 		SetEvent(ghRequestInitEvent);
 	}
 
-	bool WaitUntilInitialized( unsigned long timeout )
+	int WaitUntilInitialized( const char * deviceName, unsigned long timeout )
 	{
 		LOG(MAINFUNC,"Comm:::WaitUntilInitialized - timeout %d",timeout);
 		if (Arduino::IsConnected())
 		{
-			return true;
+			return STATUS_NOERROR;
 		}
 		else
 		{
-			RequestInitialization();
+			RequestInitialization(deviceName);
 			DWORD dwWaitResult;
 			dwWaitResult= WaitForSingleObject( 
-				ghInitCompleteEvent, // event handle
+				ghInitReqCompleteEvent, // event handle
 				timeout);    
 
+			if (dwWaitResult==WAIT_TIMEOUT)
+			{
+				strcpy_s(ErrorMsg,80,"Init timeout!");
+				return ERR_FAILED;
+			} else
 			if (dwWaitResult!=WAIT_OBJECT_0)
 			{
 				LOG(ERR,"Comm::WaitUntilInitialized - WaitForSingleObject failed (%d)", GetLastError());
-				return false;
+				strcpy_s(ErrorMsg,80,"Error in wait object!");
+				return ERR_FAILED;
 			}
-			LOG(MAINFUNC,"Comm::WaitUntilInitialized - Initialized!");
+			if (arduinoInitErrorCode!=STATUS_NOERROR)
+			{
+				LOG(MAINFUNC,"Comm::WaitUntilInitialized - Init failed! (%d)",arduinoInitErrorCode);
+				return arduinoInitErrorCode;
+			} else
+			{
+				LOG(MAINFUNC,"Comm::WaitUntilInitialized - Initialized!");
+			}
 		}
-		return true;
+		return STATUS_NOERROR;
 	}
 
-	bool OpenArduino()
+	int OpenArduino()
 	{
 		int com_port = -1;
 		int baud_rate = -1;
 		int disable_DTR = -1;
-		SardineRegistry::GetSettingsFromRegistry( &com_port, &baud_rate, &disable_DTR );
-		if (Arduino::OpenDevice(com_port,baud_rate, (disable_DTR==1))==0)
+		deviceId = -1;
+		if (SardineRegistry::GetSettingsFromRegistry( RequestedDeviceName, &com_port, &baud_rate, &disable_DTR, &deviceId ))
 		{
-			Arduino::Listen(ghCommEvent);
-			// send ok signal to processes that are waiting for initialization to end
-			LOG(MAINFUNC,"Comm::OpenArduino - signaling other threads that we are ready");
-			SetInitialized();
-			return true;
+			unsigned int ret = Arduino::OpenDevice(com_port,baud_rate, (disable_DTR==1));
+			switch(ret)
+			{
+				case ARDUINO_INIT_OK:
+					{
+					Arduino::Listen(ghCommEvent);
+					return STATUS_NOERROR;
+					}
+					break;
+				case ARDUINO_ALREADY_CONNECTED:
+					{
+					// ignore
+					return STATUS_NOERROR;
+					}
+					break;
+				case ARDUINO_IN_USE:
+					{
+					LOG(MAINFUNC,"Comm::OpenArduino - Already in use!");
+					return ERR_DEVICE_IN_USE;
+					}
+					break;
+				case ARDUINO_OPEN_FAILED:
+					{
+					LOG(MAINFUNC,"Comm::OpenArduino - not connected!");
+					return ERR_DEVICE_NOT_CONNECTED;
+					}
+					break;
+				case ARDUINO_GET_COMMSTATE_FAILED:
+				case ARDUINO_SET_COMMSTATE_FAILED:
+				case ARDUINO_SET_COMMMASK_FAILED:
+				case ARDUINO_CREATE_EVENT_FAILED:
+					{
+					LOG(MAINFUNC,"Comm::OpenArduino - get/set comm state/mask / create event failed!");
+					strcpy_s(ErrorMsg,80,"Get/set comm state/mask or create event failed!");
+					return ERR_FAILED;
+					}
+					break;
+				default:
+					LOG(MAINFUNC,"Comm::OpenArduino - invalid state!");
+					strcpy_s(ErrorMsg,80,"Invalid state!");
+					return ERR_FAILED;
+					break;
+			}
+
 		} 
-		return false;
+
+		LOG(MAINFUNC,"Comm::OpenArduino - Not found in registry!");
+		strcpy_s(ErrorMsg,80,"Device not found in registry!");
+		return ERR_FAILED;
+
 	}
+
 
 	bool WaitForEvents()
 	{
@@ -105,7 +191,10 @@ namespace Comm {
 		else if (ret==(WAIT_OBJECT_0+1))
 		{
 			LOG(MAINFUNC,"Comm::WaitForEvents - 'request for initialization' event");
-			OpenArduino();
+			arduinoInitErrorCode = OpenArduino();
+			// send ok signal to processes that are waiting for initialization to end
+			SetInitReqComplete();
+			LOG(MAINFUNC,"Comm::OpenArduino - signaling other threads that we are ready");
 			ResetEvent(ghRequestInitEvent);
 		} 
 		else if (ret==(WAIT_OBJECT_0+2))
@@ -122,7 +211,7 @@ namespace Comm {
 
 	bool CreateEvents()
 	{
-		if ((ghInitCompleteEvent = CreateEvent( 
+		if ((ghInitReqCompleteEvent = CreateEvent( 
 			NULL,               // default security attributes
 			TRUE,               // manual-reset event
 			FALSE,              // initial state is nonsignaled
@@ -207,8 +296,11 @@ namespace Comm {
 		return false;
 		}
 		*/
-		int ret = OpenArduino();
+		// do not open arduino by default
+//		int ret = OpenArduino();
+
 		CommMainFunc();
+
 		Arduino::CloseDevice();
 		LOG(INIT,"Comm::StartComm: Exiting..");
 		SetEvent(ghCommExitedEvent);
@@ -218,7 +310,7 @@ namespace Comm {
 
 
 
-	bool createCommThread()
+	bool CreateCommThread()
 	{
 		if (commThread==NULL)
 		{
@@ -252,7 +344,7 @@ namespace Comm {
 
 
 
-	bool closeCommThread()
+	bool CloseCommThread()
 	{
 		LOG(HELPERFUNC,"Comm::closeCommThread");
 		SetEvent(ghCommExitEvent);

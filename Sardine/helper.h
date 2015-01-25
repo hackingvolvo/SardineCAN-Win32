@@ -158,3 +158,5 @@ unsigned int convert_hex_to_int( char * ascii, int len );
 void Print_SConfig_List(SCONFIG_LIST *pList);
 void Print_SByte_Array(SBYTE_ARRAY * pArray);
 void Print_IOCtl_Cmd( unsigned long IoctlID );
+
+void SetLastErrorMsg( const char * msg );

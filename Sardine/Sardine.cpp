@@ -48,6 +48,13 @@ typedef struct {
 	char last_error_msg[80];	// valid if last_error==ERR_FAILED (in order for user to get more specified error message via PassThruGetLastError)
 	int last_error = 0;
 
+
+void SetLastErrorMsg( const char * msg )
+{
+	strcpy_s(last_error_msg,80,msg);
+	last_error = ERR_FAILED;
+}
+
 channel * GetChannelByChannelId( int channel_id )
 {
 	int i=0;
@@ -159,7 +166,17 @@ DllExport PassThruOpen(void *pName, unsigned long *pDeviceID)
 		LOG(MAINFUNC,"PassThruOpen: pName==NULL");
 		}
 
-	*pDeviceID = SARDINE_DEVICE_ID;
+	int ret = Comm::WaitUntilInitialized((const char*)pName,COMM_INIT_TIMEOUT);
+	if (ret==ERR_FAILED)
+		strcpy_s(last_error_msg,80,Comm::GetCommErrorMsg());
+
+	if (ret != STATUS_NOERROR)
+		{
+		LOG(ERR,"PassThruOpen: Arduino could not be initialized!");
+		return last_error=ret;
+		}
+
+	*pDeviceID = Comm::GetDeviceId();
 	return last_error=STATUS_NOERROR;
 }
 
@@ -187,7 +204,8 @@ DllExport PassThruConnect(unsigned long DeviceID, unsigned long ProtocolID, unsi
 	if (pChannelID==NULL)
 		return last_error=ERR_NULL_PARAMETER;
 
-	if (!Comm::WaitUntilInitialized(COMM_INIT_TIMEOUT))
+	// make sure we are connected
+	if (!Comm::IsConnected())
 		{
 		LOG(ERR,"PassThruConnect: Arduino wasn't initialized!");
 		return last_error=ERR_DEVICE_NOT_CONNECTED;

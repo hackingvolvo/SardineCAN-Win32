@@ -109,6 +109,8 @@ int CProtocolCAN::Connect(unsigned long channelId, unsigned long Flags)
 	this->extended_addressing = (Flags>>7) & 1;
 	LOG(PROTOCOL,"CProtocolCAN::Connect - CAN29bit: %d, ext_addressing: %d",address_len,extended_addressing);
 
+	SetDatarate(SARDINE_DEFAULT_CAN_BAUD_RATE);
+
 	// call base class implementation for general settings
 	return CProtocol::Connect(channelId,Flags);
 }
