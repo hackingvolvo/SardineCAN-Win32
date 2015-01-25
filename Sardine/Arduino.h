@@ -26,6 +26,15 @@ typedef BOOL (WINAPI *LPARDUINOLISTENER)( char * msg, int len, void * data );
 
 namespace Arduino {
 
+#define ARDUINO_INIT_OK 0
+#define ARDUINO_ALREADY_CONNECTED 1  // by us
+#define ARDUINO_IN_USE 2   // by some other process
+#define ARDUINO_OPEN_FAILED 3
+#define ARDUINO_GET_COMMSTATE_FAILED 4
+#define ARDUINO_SET_COMMSTATE_FAILED 5
+#define ARDUINO_SET_COMMMASK_FAILED 6
+#define ARDUINO_CREATE_EVENT_FAILED 7
+
 	int OpenDevice( int com_port, int baud_rate, int disable_DTR );
 	bool IsConnected();
 	int CloseDevice();

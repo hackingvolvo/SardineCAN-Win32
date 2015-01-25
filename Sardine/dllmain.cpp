@@ -26,13 +26,13 @@
 bool setup()
 {
 	LOG(INIT,"Sardine: setup");
-	return Comm::createCommThread();
+	return Comm::CreateCommThread();
 }
 
 void exitdll()
 {
 	LOG(INIT,"Sardine: Exitdll");
-	Comm::closeCommThread();
+	Comm::CloseCommThread();
 }
 
 BOOL APIENTRY DllMain( HMODULE hModule,

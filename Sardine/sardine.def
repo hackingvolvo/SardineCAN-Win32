@@ -1,16 +1,16 @@
 LIBRARY   SARDINE
 EXPORTS
-	PassThruOpen	@13
-	PassThruClose	@14
-	PassThruConnect	@1
-	PassThruDisconnect	@2
-	PassThruReadMsgs	@3
-	PassThruWriteMsgs	@4
-	PassThruStartPeriodicMsg	@5
-	PassThruStopPeriodicMsg		@6
-	PassThruStartMsgFilter	@7
-	PassThruStopMsgFilter	@8
-	PassThruSetProgrammingVoltage	@9
-	PassThruReadVersion	@10
-	PassThruGetLastError	@11
-	PassThruIoctl	@12
+	PassThruOpen	@1
+	PassThruClose	@2
+	PassThruConnect	@3
+	PassThruDisconnect	@4
+	PassThruReadMsgs	@5
+	PassThruWriteMsgs	@6
+	PassThruStartPeriodicMsg	@7
+	PassThruStopPeriodicMsg		@8
+	PassThruStartMsgFilter	@9
+	PassThruStopMsgFilter	@10
+	PassThruSetProgrammingVoltage	@11
+	PassThruReadVersion	@12
+	PassThruGetLastError	@13
+	PassThruIoctl	@14

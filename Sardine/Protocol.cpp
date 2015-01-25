@@ -481,7 +481,13 @@ int CProtocol::SetDatarate( unsigned long rate )
 	// open the channel again
 	Arduino::Send("O");
 #else
-	LOG(ERR,"CProtocol::SetDatarate: --- does not actually set the datarate on device! FIXME!");
+	// close channel just in case it was open
+	Arduino::Send(":close");
+	char buf[32];
+	sprintf_s(buf,32,":bitrate %lu",rate);
+	Arduino::Send(buf);
+	// open the channel again
+	Arduino::Send(":open");
 #endif
 	datarate = rate;
 	return STATUS_NOERROR;

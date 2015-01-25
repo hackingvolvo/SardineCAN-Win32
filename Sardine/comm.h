@@ -24,14 +24,19 @@
 // Handles the communication thread and messaging between it and the main DLL thread
 namespace Comm {
 
-	bool createCommThread();
-	bool closeCommThread();
+	bool CreateCommThread();
+	bool CloseCommThread();
 
-	bool WaitUntilInitialized( unsigned long timeout );
+	int WaitUntilInitialized( const char * deviceName, unsigned long timeout );
 	
-	void RequestInitialization();
-	void SetInitialized();
+	void RequestInitialization( const char * deviceName );
+	void SetInitReqComplete();
+	bool IsConnected();
 
 	int WaitForEvents();	// blocks until event occurs (read)
+
+	const char * GetCommErrorMsg();
+
+	unsigned long GetDeviceId();
 
 }

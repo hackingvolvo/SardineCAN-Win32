@@ -25,7 +25,7 @@
 // REMINDER: SAE  J2534-2 document:  http://wenku.baidu.com/view/2f3378c30c22590102029d31.html###
 //			 SAE J2534-1 documnets : http://wenku.baidu.com/view/ac89e723dd36a32d7375813d
 
-#define SARDINE_DEVICE_ID 0xcafebabe
+#define SARDINE_DEFAULT_DEVICE_ID 0xcafebabe
 #define SARDINE_DEFAULT_CAN_BAUD_RATE 125000
 #define COMM_INIT_TIMEOUT 2000	// we wait 2 seconds for Comm thread to initialize Arduino in Sardine::Connect (though it normally should have been initialized already straight after launching the DLL)
 
